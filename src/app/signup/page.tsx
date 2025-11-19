@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
@@ -34,9 +34,10 @@ export default function SignupPage() {
   
   const [timeLeft, setTimeLeft] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
-  const [emailMsg, setEmailMsg] = useState({ text: '', type: '' }); // 'text-danger' | 'text-success'
+  const [emailMsg, setEmailMsg] = useState({ text: '', type: '' }); // 'text-red-500' | 'text-green-600'
   const [codeMsg, setCodeMsg] = useState({ text: '', type: '' });
 
+  /* 타이머 로직 */
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (timerActive && timeLeft > 0) {
@@ -45,7 +46,7 @@ export default function SignupPage() {
       }, 1000);
     } else if (timeLeft === 0 && timerActive) {
       setTimerActive(false);
-      setEmailMsg({ text: '인증번호 유효시간이 만료되었습니다. 다시 시도해주세요.', type: 'text-danger' });
+      setEmailMsg({ text: '인증번호 유효시간이 만료되었습니다. 다시 시도해주세요.', type: 'text-red-500' });
       setShowCodeInput(false);
       setIsSending(false);
     }
@@ -84,16 +85,16 @@ export default function SignupPage() {
 
       if (data.success) {
         setShowCodeInput(true);
-        setTimeLeft(300); // 5분
+        setTimeLeft(300);
         setTimerActive(true);
-        setEmailMsg({ text: `인증번호가 발송되었습니다.`, type: 'text-success' });
+        setEmailMsg({ text: `인증번호가 발송되었습니다.`, type: 'text-green-600' });
       } else {
-        setEmailMsg({ text: data.message, type: 'text-danger' });
+        setEmailMsg({ text: data.message, type: 'text-red-500' });
         setIsSending(false);
       }
     } catch (error) {
       console.error(error);
-      setEmailMsg({ text: '오류가 발생했습니다. 다시 시도해주세요.', type: 'text-danger' });
+      setEmailMsg({ text: '오류가 발생했습니다. 다시 시도해주세요.', type: 'text-red-500' });
       setIsSending(false);
     }
   };
@@ -104,7 +105,7 @@ export default function SignupPage() {
     const code = watch('verificationCode');
 
     if (!code || code.length !== 6) {
-      setCodeMsg({ text: '6자리 인증번호를 입력하세요.', type: 'text-danger' });
+      setCodeMsg({ text: '6자리 인증번호를 입력하세요.', type: 'text-red-500' });
       return;
     }
 
@@ -121,14 +122,14 @@ export default function SignupPage() {
 
       if (data.verified) {
         setTimerActive(false);
-        setCodeMsg({ text: '이메일 인증에 성공했습니다.', type: 'text-success' });
+        setCodeMsg({ text: '이메일 인증에 성공했습니다.', type: 'text-green-600' });
         setEmailVerified(true);
-        setEmailMsg({ text: '이메일 인증이 완료되었습니다.', type: 'text-success' });
+        setEmailMsg({ text: '이메일 인증이 완료되었습니다.', type: 'text-green-600' });
       } else {
-        setCodeMsg({ text: '인증번호가 일치하지 않습니다.', type: 'text-danger' });
+        setCodeMsg({ text: '인증번호가 일치하지 않습니다.', type: 'text-red-500' });
       }
     } catch (error) {
-      setCodeMsg({ text: '오류가 발생했습니다.', type: 'text-danger' });
+      setCodeMsg({ text: '오류가 발생했습니다.', type: 'text-red-500' });
     }
   };
 
@@ -141,17 +142,9 @@ export default function SignupPage() {
     
     new window.daum.Postcode({
       oncomplete: function(data: any) {
-        // 팝업에서 검색결과 항목을 클릭했을때 실행할 코드를 작성하는 부분
-        let addr = ''; // 주소 변수
-        let extraAddr = ''; // 참고항목 변수
+        let addr = data.userSelectedType === 'R' ? data.roadAddress : data.jibunAddress;
+        let extraAddr = '';
 
-        if (data.userSelectedType === 'R') { // 사용자가 도로명 주소를 선택했을 경우
-            addr = data.roadAddress;
-        } else { // 사용자가 지번 주소를 선택했을 경우(J)
-            addr = data.jibunAddress;
-        }
-
-        // 도로명 주소일 때 참고항목 조합
         if(data.userSelectedType === 'R'){
             if(data.bname !== '' && /[동|로|가]$/g.test(data.bname)){
                 extraAddr += data.bname;
@@ -175,7 +168,7 @@ export default function SignupPage() {
   /* 회원가입 제출 핸들러 */
   const onSubmit = async (data: SignupFormInputs) => {
     if (!emailVerified) {
-      setEmailMsg({ text: '이메일 인증을 완료해주세요.', type: 'text-danger' });
+      setEmailMsg({ text: '이메일 인증을 완료해주세요.', type: 'text-red-500' });
       document.getElementById('email')?.focus();
       return;
     }
@@ -210,7 +203,7 @@ export default function SignupPage() {
 
       if (response.data.success) {
         alert('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
-        router.push('/members/login');
+        router.push('/login');
       } else {
         alert(response.data.message || '회원가입에 실패했습니다.');
       }
@@ -221,177 +214,190 @@ export default function SignupPage() {
     }
   };
 
+  const inputClass = "w-full px-3 py-2 text-gray-700 border rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out";
+  const errorInputClass = "border-red-500 focus:ring-red-500 focus:border-red-500";
+  const buttonSecondaryClass = "px-4 py-2 font-medium text-gray-700 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out whitespace-nowrap";
+
   return (
-    <>
+    <div className="container mx-auto px-4 py-12">
       <Script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" strategy="lazyOnload" />
       
-      <div className="container my-5">
-        <div className="row justify-content-center">
-            <div className="col-md-6">
-                <h2 className="mb-4">회원가입</h2>
+      <div className="flex justify-center">
+        <div className="w-full max-w-lg">
+          <h2 className="mb-8 text-3xl font-bold text-center text-gray-900">회원가입</h2>
 
-                <form id="signup-form" onSubmit={handleSubmit(onSubmit)}>
-                    
-                    {/* 이메일 */}
-                    <div className="mb-3">
-                        <label htmlFor="email" className="form-label">이메일</label>
-                        <div className="input-group">
-                            <input 
-                                type="email" 
-                                id="email" 
-                                className={`form-control ${errors.email ? 'is-invalid' : ''}`} 
-                                autoComplete="email"
-                                readOnly={emailVerified || (showCodeInput && timerActive)}
-                                {...register('email', { required: '이메일은 필수 입력 값입니다.' })} 
-                            />
-                            <button 
-                                className="btn btn-outline-secondary" 
-                                type="button" 
-                                id="btn-send-code"
-                                onClick={handleSendVerificationEmail}
-                                disabled={isSending || emailVerified}
-                            >
-                                {isSending && !showCodeInput ? '전송 중...' : '인증번호 발송'}
-                            </button>
-                        </div>
-
-                        {/* 에러 메시지 및 상태 메시지 */}
-                        {errors.email && <div className="form-text text-danger">{errors.email.message}</div>}
-                        <div id="email-msg" className={`form-text ${emailMsg.type}`}>
-                            {emailMsg.text} 
-                            {timerActive && <span className="ms-1">({formatTime(timeLeft)})</span>}
-                        </div>
-                    </div>
-
-                    {/* 인증번호 */}
-                    {showCodeInput && !emailVerified && (
-                        <div id="verification-code-group" className="mb-3">
-                            <label htmlFor="verification-code" className="form-label">인증번호</label>
-                            <div className="input-group">
-                                <input 
-                                    type="text" 
-                                    id="verification-code" 
-                                    className="form-control" 
-                                    placeholder="6자리 숫자를 입력하세요"
-                                    autoComplete="off"
-                                    {...register('verificationCode')}
-                                />
-                                <button 
-                                    className="btn btn-outline-secondary" 
-                                    type="button" 
-                                    id="btn-verify-code"
-                                    onClick={handleVerifyCode}
-                                >
-                                    인증 확인
-                                </button>
-                            </div>
-                            <div id="code-msg" className={`form-text ${codeMsg.type}`}>{codeMsg.text}</div>
-                        </div>
-                    )}
-
-                    {/* 이름 */}
-                    <div className="mb-3">
-                        <label htmlFor="name" className="form-label">이름</label>
+          <div className="bg-white shadow-md rounded-lg px-8 pt-6 pb-8 mb-4 border border-gray-200">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                
+                {/* 이메일 */}
+                <div>
+                    <label htmlFor="email" className="block mb-1 text-sm font-bold text-gray-700">이메일</label>
+                    <div className="flex gap-2">
                         <input 
-                            type="text" 
-                            id="name" 
-                            className={`form-control ${errors.name ? 'is-invalid' : ''}`}
-                            autoComplete="name" 
-                            {...register('name', { required: '이름은 필수 입력 값입니다.' })}
+                            type="email" 
+                            id="email" 
+                            className={`${inputClass} ${errors.email ? errorInputClass : 'border-gray-300'}`}
+                            autoComplete="email"
+                            readOnly={emailVerified || (showCodeInput && timerActive)}
+                            placeholder="email@example.com"
+                            {...register('email', { required: '이메일은 필수 입력 값입니다.' })} 
                         />
-                        {errors.name && <div className="form-text text-danger">{errors.name.message}</div>}
+                        <button 
+                            className={buttonSecondaryClass}
+                            type="button" 
+                            id="btn-send-code"
+                            onClick={handleSendVerificationEmail}
+                            disabled={isSending || emailVerified}
+                        >
+                            {isSending && !showCodeInput ? '전송 중...' : '인증번호 발송'}
+                        </button>
                     </div>
 
-                    {/* 비밀번호 */}
-                    <div className="mb-3">
-                        <label htmlFor="password" className="form-label">비밀번호</label>
-                        <input 
-                            type="password" 
-                            id="password" 
-                            className={`form-control ${errors.password ? 'is-invalid' : ''}`}
-                            autoComplete="new-password" 
-                            {...register('password', { 
-                                required: '비밀번호는 필수 입력 값입니다.',
-                                minLength: { value: 8, message: '비밀번호는 8자 이상 입력해주세요.' } 
-                            })}
-                        />
-                        {errors.password && <div className="form-text text-danger">{errors.password.message}</div>}
-                    </div>
+                    {/* 에러 메시지 및 상태 메시지 */}
+                    {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
+                    <p className={`mt-1 text-xs ${emailMsg.type}`}>
+                        {emailMsg.text} 
+                        {timerActive && <span className="ml-1 font-medium">({formatTime(timeLeft)})</span>}
+                    </p>
+                </div>
 
-                    {/* 비밀번호 확인 */}
-                    <div className="mb-3">
-                        <label htmlFor="passwordConfirm" className="form-label">비밀번호 확인</label>
-                        <input 
-                            type="password" 
-                            id="passwordConfirm" 
-                            className={`form-control ${errors.passwordConfirm ? 'is-invalid' : ''}`}
-                            autoComplete="new-password" 
-                            {...register('passwordConfirm', { required: '비밀번호 확인은 필수 입력 값입니다.' })}
-                        />
-                        {errors.passwordConfirm && <div className="form-text text-danger">{errors.passwordConfirm.message}</div>}
-                    </div>
-
-                    {/* 주소 */}
-                    <div className="mb-3">
-                        <label htmlFor="postcode" className="form-label">주소</label>
-                        <div className="input-group">
+                {/* 인증번호 */}
+                {showCodeInput && !emailVerified && (
+                    <div className="p-4 bg-gray-50 rounded-md border border-gray-100">
+                        <label htmlFor="verification-code" className="block mb-1 text-sm font-bold text-gray-700">인증번호</label>
+                        <div className="flex gap-2">
                             <input 
                                 type="text" 
-                                id="postcode" 
-                                className="form-control" 
-                                placeholder="우편번호" 
-                                readOnly 
-                                autoComplete="postal-code"
-                                {...register('postcode', { required: true })} 
-                                onClick={handleAddressSearch}
+                                id="verification-code" 
+                                className={`${inputClass} border-gray-300`}
+                                placeholder="6자리 숫자"
+                                autoComplete="off"
+                                {...register('verificationCode')}
                             />
                             <button 
-                                className="btn btn-outline-secondary" 
+                                className={buttonSecondaryClass}
                                 type="button" 
-                                id="btn-search-address"
-                                onClick={handleAddressSearch}
+                                id="btn-verify-code"
+                                onClick={handleVerifyCode}
                             >
-                                우편번호 찾기
+                                인증 확인
                             </button>
                         </div>
+                        <p className={`mt-1 text-xs ${codeMsg.type}`}>{codeMsg.text}</p>
+                    </div>
+                )}
+
+                {/* 이름 */}
+                <div>
+                    <label htmlFor="name" className="block mb-1 text-sm font-bold text-gray-700">이름</label>
+                    <input 
+                        type="text" 
+                        id="name" 
+                        className={`${inputClass} ${errors.name ? errorInputClass : 'border-gray-300'}`}
+                        autoComplete="name" 
+                        {...register('name', { required: '이름은 필수 입력 값입니다.' })}
+                    />
+                    {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
+                </div>
+
+                {/* 비밀번호 */}
+                <div>
+                    <label htmlFor="password" className="block mb-1 text-sm font-bold text-gray-700">비밀번호</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        className={`${inputClass} ${errors.password ? errorInputClass : 'border-gray-300'}`}
+                        autoComplete="new-password" 
+                        placeholder="8자 이상 입력해주세요"
+                        {...register('password', { 
+                            required: '비밀번호는 필수 입력 값입니다.',
+                            minLength: { value: 8, message: '비밀번호는 8자 이상 입력해주세요.' } 
+                        })}
+                    />
+                    {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
+                </div>
+
+                {/* 비밀번호 확인 */}
+                <div>
+                    <label htmlFor="passwordConfirm" className="block mb-1 text-sm font-bold text-gray-700">비밀번호 확인</label>
+                    <input 
+                        type="password" 
+                        id="passwordConfirm" 
+                        className={`${inputClass} ${errors.passwordConfirm ? errorInputClass : 'border-gray-300'}`}
+                        autoComplete="new-password" 
+                        {...register('passwordConfirm', { required: '비밀번호 확인은 필수 입력 값입니다.' })}
+                    />
+                    {errors.passwordConfirm && <p className="mt-1 text-xs text-red-500">{errors.passwordConfirm.message}</p>}
+                </div>
+
+                {/* 주소 */}
+                <div>
+                    <label htmlFor="postcode" className="block mb-1 text-sm font-bold text-gray-700">주소</label>
+                    <div className="flex gap-2 mb-2">
                         <input 
                             type="text" 
-                            id="mainAddress" 
-                            className="form-control mt-2" 
-                            placeholder="주소" 
+                            id="postcode" 
+                            className={`${inputClass} border-gray-300 bg-gray-50`}
+                            placeholder="우편번호" 
                             readOnly 
-                            autoComplete="address-line1"
-                            {...register('mainAddress', { required: true })} 
+                            autoComplete="postal-code"
+                            {...register('postcode', { required: true })} 
                             onClick={handleAddressSearch}
                         />
-                        <input 
-                            type="text" 
-                            id="detailAddress" 
-                            className="form-control mt-2" 
-                            placeholder="상세주소" 
-                            autoComplete="address-line2"
-                            {...register('detailAddress')} 
-                        />
-                        {(errors.postcode || errors.mainAddress) && <div className="form-text text-danger">주소를 입력해주세요.</div>}
+                        <button 
+                            className={buttonSecondaryClass}
+                            type="button" 
+                            id="btn-search-address"
+                            onClick={handleAddressSearch}
+                        >
+                            우편번호 찾기
+                        </button>
                     </div>
+                    <input 
+                        type="text" 
+                        id="mainAddress" 
+                        className={`${inputClass} border-gray-300 bg-gray-50 mb-2`}
+                        placeholder="기본 주소" 
+                        readOnly 
+                        autoComplete="address-line1"
+                        {...register('mainAddress', { required: true })} 
+                        onClick={handleAddressSearch}
+                    />
+                    <input 
+                        type="text" 
+                        id="detailAddress" 
+                        className={`${inputClass} border-gray-300`}
+                        placeholder="상세 주소" 
+                        autoComplete="address-line2"
+                        {...register('detailAddress')} 
+                    />
+                    {(errors.postcode || errors.mainAddress) && <p className="mt-1 text-xs text-red-500">주소를 입력해주세요.</p>}
+                </div>
 
-                    {/* 생년월일 */}
-                    <div className="mb-3">
-                        <label htmlFor="birthday" className="form-label">생년월일 (선택)</label>
-                        <input 
-                            type="date" 
-                            id="birthday" 
-                            className="form-control" 
-                            autoComplete="off" 
-                            {...register('birthday')}
-                        />
-                    </div>
+                {/* 생년월일 */}
+                <div>
+                    <label htmlFor="birthday" className="block mb-1 text-sm font-bold text-gray-700">생년월일 (선택)</label>
+                    <input 
+                        type="date" 
+                        id="birthday" 
+                        className={`${inputClass} border-gray-300`}
+                        autoComplete="off" 
+                        {...register('birthday')}
+                    />
+                </div>
 
-                    <button type="submit" className="btn btn-primary w-100">가입하기</button>
-                </form>
-            </div>
+                <div className="pt-2">
+                    <button 
+                        type="submit" 
+                        className="w-full px-4 py-3 font-bold text-white bg-blue-600 rounded-md shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-300"
+                    >
+                        가입하기
+                    </button>
+                </div>
+            </form>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

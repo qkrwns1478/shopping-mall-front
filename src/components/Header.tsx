@@ -1,14 +1,30 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { BsCartFill, BsList } from 'react-icons/bs';
 import api from '@/lib/api';
 
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // 모바일 메뉴 상태
+  const [isShopOpen, setIsShopOpen] = useState(false); // 드롭다운 메뉴 상태
+  const dropdownRef = useRef<HTMLLIElement>(null);
 
+  // 로그인 상태 확인
   useEffect(() => {
-    // TODO: 실제로는 로그인 성공 시 localStorage나 전역 상태를 업데이트해야 함
+    // TODO: 로그인 성공 시 localStorage나 전역 상태를 업데이트해야 함
+  }, []);
+
+  // 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsShopOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleLogout = async () => {
@@ -23,85 +39,139 @@ export default function Header() {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-light">
-      <div className="container px-4 px-lg-5">
-        <Link className="navbar-brand" href="/">MUNSIKSA</Link>
-        <button 
-          className="navbar-toggler" 
-          type="button" 
-          data-bs-toggle="collapse" 
-          data-bs-target="#navbarSupportedContent" 
-          aria-controls="navbarSupportedContent" 
-          aria-expanded="false" 
-          aria-label="Toggle navigation"
-        >
-          <span className="navbar-toggler-icon"></span>
-        </button>
-        <div className="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul className="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
-            <li className="nav-item">
-              <Link className="nav-link active" aria-current="page" href="/">Home</Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link" href="#!">About</Link>
-            </li>
-            <li className="nav-item dropdown">
-              <a 
-                className="nav-link dropdown-toggle" 
-                id="navbarDropdown" 
-                href="#" 
-                role="button" 
-                data-bs-toggle="dropdown" 
-                aria-expanded="false"
-              >
-                Shop
-              </a>
-              <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
-                <li><Link className="dropdown-item" href="#!">All Products</Link></li>
-                <li><hr className="dropdown-divider" /></li>
-                <li><Link className="dropdown-item" href="#!">Popular Items</Link></li>
-                <li><Link className="dropdown-item" href="#!">New Arrivals</Link></li>
-              </ul>
-            </li>
-          </ul>
+    <nav className="bg-gray-50 border-b border-gray-200">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
           
-          <ul className="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
-            <li className="nav-item">
-              <a className="nav-link" href="#!">
-                <i className="bi-cart-fill me-1"></i>
-                Cart
-                <span className="badge bg-dark text-white ms-1 rounded-pill">0</span>
-              </a>
-            </li>
+          <div className="flex-shrink-0 flex items-center">
+            <Link href="/" className="text-xl font-bold text-gray-800 hover:text-gray-600">
+              MUNSIKSA
+            </Link>
+          </div>
 
-            {!isLoggedIn ? (
-              <>
-                <li className="nav-item">
-                  <Link className="nav-link" href="/members/login">로그인</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link" href="/members/signup">회원가입</Link>
-                </li>
-              </>
-            ) : (
-              <>
-                <li className="nav-item">
-                  <Link className="nav-link" href="/members/mypage">마이페이지</Link>
-                </li>
-                <li className="nav-item">
-                  <button 
-                    onClick={handleLogout} 
-                    className="btn nav-link" 
-                    style={{ border: 'none', background: 'none', padding: '0.5rem 1rem' }}
-                  >
-                    로그아웃
-                  </button>
-                </li>
-              </>
-            )}
-          </ul>
+          {/* 모바일 메뉴 버튼 */}
+          <div className="flex items-center lg:hidden">
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              type="button"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-200 focus:outline-none"
+            >
+              <BsList size={24} />
+            </button>
+          </div>
+
+          {/* 데스크탑 메뉴 */}
+          <div className="hidden lg:flex lg:items-center lg:space-x-8">
+            <ul className="flex space-x-6 items-center">
+              <li>
+                <Link href="/" className="text-gray-900 font-semibold hover:text-gray-700">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link href="#!" className="text-gray-500 hover:text-gray-900">
+                  About
+                </Link>
+              </li>
+              
+              {/* Shop 드롭다운 */}
+              <li className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsShopOpen(!isShopOpen)}
+                  className="flex items-center text-gray-500 hover:text-gray-900 focus:outline-none"
+                >
+                  Shop
+                  <svg className={`ml-1 h-4 w-4 transition-transform ${isShopOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                
+                {isShopOpen && (
+                  <div className="absolute left-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                    <div className="py-1" role="menu">
+                      <Link href="#!" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">All Products</Link>
+                      <hr className="border-gray-200 my-1" />
+                      <Link href="#!" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Popular Items</Link>
+                      <Link href="#!" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">New Arrivals</Link>
+                    </div>
+                  </div>
+                )}
+              </li>
+            </ul>
+
+            <ul className="flex items-center space-x-4">
+              <li>
+                <Link href="#!" className="flex items-center px-4 py-2 border border-gray-800 rounded-md text-gray-800 hover:bg-gray-800 hover:text-white transition">
+                  <BsCartFill className="mr-2" />
+                  Cart
+                  <span className="ml-2 bg-gray-800 text-white text-xs font-bold px-2 py-0.5 rounded-full group-hover:bg-white group-hover:text-gray-800">0</span>
+                </Link>
+              </li>
+
+              {!isLoggedIn ? (
+                <>
+                  <li><Link href="/login" className="text-gray-500 hover:text-gray-900">로그인</Link></li>
+                  <li><Link href="/signup" className="text-gray-500 hover:text-gray-900">회원가입</Link></li>
+                </>
+              ) : (
+                <>
+                  <li><Link href="/mypage" className="text-gray-500 hover:text-gray-900">마이페이지</Link></li>
+                  <li>
+                    <button onClick={handleLogout} className="text-gray-500 hover:text-gray-900">
+                      로그아웃
+                    </button>
+                  </li>
+                </>
+              )}
+            </ul>
+          </div>
         </div>
       </div>
+
+      {/* 모바일 메뉴 */}
+      {isMenuOpen && (
+        <div className="lg:hidden bg-white border-t border-gray-200">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            <Link href="/" className="block px-3 py-2 rounded-md text-base font-medium text-gray-900 bg-gray-50">Home</Link>
+            <Link href="#!" className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">About</Link>
+            
+            {/* 모바일 Shop 드롭다운 */}
+            <div>
+              <button 
+                onClick={() => setIsShopOpen(!isShopOpen)}
+                className="w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 flex justify-between items-center"
+              >
+                Shop
+                <svg className={`h-4 w-4 transition-transform ${isShopOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              {isShopOpen && (
+                <div className="pl-6 space-y-1">
+                  <Link href="#!" className="block px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">All Products</Link>
+                  <Link href="#!" className="block px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">Popular Items</Link>
+                  <Link href="#!" className="block px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">New Arrivals</Link>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="pt-4 pb-4 border-t border-gray-200">
+            <div className="px-2 space-y-1">
+                <Link href="#!" className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:bg-gray-100">
+                  <BsCartFill className="mr-2" /> Cart <span className="ml-2 bg-gray-800 text-white text-xs px-2 py-0.5 rounded-full">0</span>
+                </Link>
+                {!isLoggedIn ? (
+                  <>
+                    <Link href="/login" className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">로그인</Link>
+                    <Link href="/signup" className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">회원가입</Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/mypage" className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">마이페이지</Link>
+                    <button onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">로그아웃</button>
+                  </>
+                )}
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
