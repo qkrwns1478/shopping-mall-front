@@ -7,16 +7,30 @@ import api from '@/lib/api';
 
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // 모바일 메뉴 상태
-  const [isShopOpen, setIsShopOpen] = useState(false); // 드롭다운 메뉴 상태
+  const [userName, setUserName] = useState('');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isShopOpen, setIsShopOpen] = useState(false);
   const dropdownRef = useRef<HTMLLIElement>(null);
 
-  // 로그인 상태 확인
   useEffect(() => {
-    // TODO: 로그인 성공 시 localStorage나 전역 상태를 업데이트해야 함
+    const checkLoginStatus = async () => {
+      try {
+        const response = await api.get('/members/info');
+        
+        if (response.data.authenticated) {
+          setIsLoggedIn(true);
+          setUserName(response.data.name);
+        } else {
+          setIsLoggedIn(false);
+        }
+      } catch (error) {
+        setIsLoggedIn(false);
+      }
+    };
+
+    checkLoginStatus();
   }, []);
 
-  // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -31,7 +45,7 @@ export default function Header() {
     try {
       await api.post('/members/logout');
       setIsLoggedIn(false);
-      alert('로그아웃 되었습니다.');
+      setUserName('');
       window.location.href = '/';
     } catch (error) {
       console.error('Logout failed', error);
@@ -63,16 +77,8 @@ export default function Header() {
           {/* 데스크탑 메뉴 */}
           <div className="hidden lg:flex lg:items-center lg:space-x-8">
             <ul className="flex space-x-6 items-center">
-              <li>
-                <Link href="/" className="text-gray-900 font-semibold hover:text-gray-700">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link href="#!" className="text-gray-500 hover:text-gray-900">
-                  About
-                </Link>
-              </li>
+              <li><Link href="/" className="text-gray-900 font-semibold hover:text-gray-700">Home</Link></li>
+              {/* <li><Link href="#!" className="text-gray-500 hover:text-gray-900">About</Link></li> */}
               
               {/* Shop 드롭다운 */}
               <li className="relative" ref={dropdownRef}>
@@ -113,6 +119,7 @@ export default function Header() {
                 </>
               ) : (
                 <>
+                  {userName && <li className="text-sm text-gray-700 font-medium">{userName}님</li>}
                   <li><Link href="/mypage" className="text-gray-500 hover:text-gray-900">마이페이지</Link></li>
                   <li>
                     <button onClick={handleLogout} className="text-gray-500 hover:text-gray-900">
@@ -164,6 +171,7 @@ export default function Header() {
                   </>
                 ) : (
                   <>
+                    {userName && <span className="block px-3 py-2 text-sm font-bold text-gray-700">{userName}님 환영합니다</span>}
                     <Link href="/mypage" className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">마이페이지</Link>
                     <button onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">로그아웃</button>
                   </>
