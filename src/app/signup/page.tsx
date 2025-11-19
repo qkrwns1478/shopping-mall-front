@@ -367,7 +367,7 @@ export default function SignupPage() {
                         id="detailAddress" 
                         className={`${inputClass} border-gray-300`}
                         placeholder="상세 주소" 
-                        autoComplete="address-line2"
+                        autoComplete="off"
                         {...register('detailAddress')} 
                     />
                     {(errors.postcode || errors.mainAddress) && <p className="mt-1 text-xs text-red-500">주소를 입력해주세요.</p>}

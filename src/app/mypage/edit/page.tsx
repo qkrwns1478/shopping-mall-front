@@ -210,6 +210,7 @@ export default function EditProfilePage() {
                   id="detailAddress"
                   type="text"
                   placeholder="상세 주소"
+                  autoComplete="off"
                   className={inputClass}
                   {...register('detailAddress')}
                 />

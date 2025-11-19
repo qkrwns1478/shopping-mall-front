@@ -29,7 +29,6 @@ export default function LoginPage() {
       });
 
       if (response.data.success) {
-        // 로그인 성공 시 메인으로 이동
         window.location.href = '/';
       } else {
         setLoginError(response.data.message || '로그인에 실패했습니다.');
