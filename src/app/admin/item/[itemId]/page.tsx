@@ -1,40 +1,62 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import api from '@/lib/api';
 import { ItemFormInputs } from '@/types/item';
 
-export default function ItemNewPage() {
+export default function ItemEditPage() {
   const router = useRouter();
-  const { register, handleSubmit, formState: { errors } } = useForm<ItemFormInputs>({
-    defaultValues: {
-      itemSellStatus: 'SELL'
-    }
-  });
+  const params = useParams();
+  const itemId = params.itemId;
+
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<ItemFormInputs>();
+  const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    const fetchItem = async () => {
+      try {
+        const response = await api.get(`/admin/item/${itemId}`);
+        const data = response.data.data;
+        
+        setValue('itemNm', data.itemNm);
+        setValue('price', data.price);
+        setValue('stockNumber', data.stockNumber);
+        setValue('itemDetail', data.itemDetail);
+        setValue('itemSellStatus', data.itemSellStatus);
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Failed to fetch item:', error);
+        alert('상품 정보를 불러오는데 실패했습니다.');
+        router.push('/admin/item/list');
+      }
+    };
+
+    if (itemId) {
+      fetchItem();
+    }
+  }, [itemId, setValue, router]);
 
   const onSubmit = async (data: ItemFormInputs) => {
     setErrorMsg('');
     
     try {
-      const response = await api.post('/admin/item/new', data);
+      const response = await api.post(`/admin/item/${itemId}`, data);
       if (response.data.success) {
-        alert('상품이 등록되었습니다.');
+        alert('상품 정보가 수정되었습니다.');
         router.push('/admin/item/list');
       } else {
-        setErrorMsg(response.data.message || '상품 등록에 실패했습니다.');
+        setErrorMsg(response.data.message || '상품 수정에 실패했습니다.');
       }
     } catch (err: any) {
-      if (err.response?.status === 403) {
-        alert('관리자 권한이 없습니다.');
-        router.push('/');
-      } else {
-        setErrorMsg(err.response?.data?.message || '서버 오류가 발생했습니다.');
-      }
+      setErrorMsg(err.response?.data?.message || '서버 오류가 발생했습니다.');
     }
   };
+
+  if (loading) return <div className="text-center py-20">로딩 중...</div>;
 
   const inputClass = "w-full px-3 py-2 text-gray-700 border rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150";
   const labelClass = "block mb-1 text-sm font-bold text-gray-700";
@@ -43,7 +65,7 @@ export default function ItemNewPage() {
     <div className="container mx-auto px-4 py-12">
       <div className="flex justify-center">
         <div className="w-full max-w-2xl">
-          <h2 className="mb-8 text-3xl font-bold text-gray-900">상품 등록</h2>
+          <h2 className="mb-8 text-3xl font-bold text-gray-900">상품 수정</h2>
 
           <div className="bg-white shadow-md rounded-lg border border-gray-200 p-6 sm:p-8">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -115,7 +137,7 @@ export default function ItemNewPage() {
               <div className="flex justify-between pt-4">
                 <button
                   type="button"
-                  onClick={() => router.push('/admin/item/list')}
+                  onClick={() => router.back()}
                   className="px-4 py-2 font-medium text-gray-700 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 transition"
                 >
                   취소
@@ -124,7 +146,7 @@ export default function ItemNewPage() {
                   type="submit"
                   className="px-6 py-2 font-bold text-white bg-blue-600 rounded shadow hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition"
                 >
-                  저장하기
+                  수정하기
                 </button>
               </div>
             </form>

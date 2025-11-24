@@ -10,8 +10,7 @@ export default function AdminPage() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* 상품 등록 카드 */}
-        <Link href="/admin/item/new" className="block group">
+        {/* <Link href="/admin/item/new" className="block group">
           <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all duration-200 h-full">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-blue-50 rounded-lg text-blue-600 group-hover:bg-blue-100 transition-colors">
@@ -25,23 +24,23 @@ export default function AdminPage() {
               새로운 상품을 스토어에 등록합니다. 상품명, 가격, 재고 및 상세 정보를 입력하세요.
             </p>
           </div>
-        </Link>
+        </Link> */}
 
-        {/* TODO */}
-        <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 opacity-60">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-gray-50 rounded-lg text-gray-400">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-              </svg>
+        <Link href="/admin/item/list" className="block group">
+          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-300 transition-all duration-200 h-full">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-green-50 rounded-lg text-green-600 group-hover:bg-green-100 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+              </div>
             </div>
-            <span className="text-xs font-medium bg-gray-100 text-gray-500 px-2 py-1 rounded">준비중</span>
+            <h3 className="text-xl font-bold mb-2 text-gray-900 group-hover:text-green-600 transition-colors">상품 관리</h3>
+            <p className="text-gray-500 text-sm">
+              등록된 상품 목록을 조회하고 수정하거나 삭제합니다.
+            </p>
           </div>
-          <h3 className="text-xl font-bold mb-2 text-gray-400">상품 관리</h3>
-          <p className="text-gray-400 text-sm">
-            등록된 상품 목록을 조회하고 수정하거나 삭제합니다.
-          </p>
-        </div>
+        </Link>
 
         <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 opacity-60">
           <div className="flex items-center justify-between mb-4">
