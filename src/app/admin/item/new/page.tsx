@@ -29,7 +29,7 @@ export default function ItemNewPage() {
       const response = await api.post('/admin/item/new', data);
       if (response.data.success) {
         alert('상품이 등록되었습니다.');
-        router.push('/');
+        router.push('/admin');
       } else {
         setErrorMsg(response.data.message || '상품 등록에 실패했습니다.');
       }

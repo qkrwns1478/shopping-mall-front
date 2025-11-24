@@ -8,6 +8,7 @@ import api from '@/lib/api';
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState('');
+  const [userRole, setUserRole] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const dropdownRef = useRef<HTMLLIElement>(null);
@@ -20,11 +21,14 @@ export default function Header() {
         if (response.data.authenticated) {
           setIsLoggedIn(true);
           setUserName(response.data.name);
+          setUserRole(response.data.role);
         } else {
           setIsLoggedIn(false);
+          setUserRole('');
         }
       } catch (error) {
         setIsLoggedIn(false);
+        setUserRole('');
       }
     };
 
@@ -46,6 +50,7 @@ export default function Header() {
       await api.post('/members/logout');
       setIsLoggedIn(false);
       setUserName('');
+      setUserRole('');
       window.location.href = '/';
     } catch (error) {
       console.error('Logout failed', error);
@@ -78,7 +83,6 @@ export default function Header() {
           <div className="hidden lg:flex lg:items-center lg:space-x-8">
             <ul className="flex space-x-6 items-center">
               <li><Link href="/" className="text-gray-900 font-semibold hover:text-gray-700">Home</Link></li>
-              {/* <li><Link href="#!" className="text-gray-500 hover:text-gray-900">About</Link></li> */}
               
               {/* Shop 드롭다운 */}
               <li className="relative" ref={dropdownRef}>
@@ -120,7 +124,11 @@ export default function Header() {
               ) : (
                 <>
                   {userName && <li className="text-sm text-gray-700 font-medium">{userName}님</li>}
-                  <li><Link href="/mypage" className="text-gray-500 hover:text-gray-900">마이페이지</Link></li>
+                  {userRole === 'ADMIN' ? (
+                    <li><Link href="/admin" className="text-gray-500 hover:text-gray-900 font-bold text-blue-600">관리자</Link></li>
+                  ) : (
+                    <li><Link href="/mypage" className="text-gray-500 hover:text-gray-900">마이페이지</Link></li>
+                  )}
                   <li>
                     <button onClick={handleLogout} className="text-gray-500 hover:text-gray-900">
                       로그아웃
@@ -138,7 +146,6 @@ export default function Header() {
         <div className="lg:hidden bg-white border-t border-gray-200">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             <Link href="/" className="block px-3 py-2 rounded-md text-base font-medium text-gray-900 bg-gray-50">Home</Link>
-            <Link href="#!" className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">About</Link>
             
             {/* 모바일 Shop 드롭다운 */}
             <div>
@@ -172,7 +179,11 @@ export default function Header() {
                 ) : (
                   <>
                     {userName && <span className="block px-3 py-2 text-sm font-bold text-gray-700">{userName}님 환영합니다</span>}
-                    <Link href="/mypage" className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">마이페이지</Link>
+                    {userRole === 'ADMIN' ? (
+                      <Link href="/admin" className="block px-3 py-2 rounded-md text-base font-medium text-blue-600 hover:text-blue-700 hover:bg-gray-50">관리자 대시보드</Link>
+                    ) : (
+                      <Link href="/mypage" className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">마이페이지</Link>
+                    )}
                     <button onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50">로그아웃</button>
                   </>
                 )}
