@@ -14,12 +14,37 @@ export default function ItemNewPage() {
     }
   });
   const [errorMsg, setErrorMsg] = useState('');
+  const [preview, setPreview] = useState<string | null>(null);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPreview(null);
+    }
+  };
 
   const onSubmit = async (data: ItemFormInputs) => {
     setErrorMsg('');
     
+    const formData = new FormData();
+    formData.append('itemNm', data.itemNm);
+    formData.append('price', data.price.toString());
+    formData.append('stockNumber', data.stockNumber.toString());
+    formData.append('itemDetail', data.itemDetail);
+    formData.append('itemSellStatus', data.itemSellStatus);
+    
+    if (data.itemImgFile && data.itemImgFile.length > 0) {
+      formData.append('itemImgFile', data.itemImgFile[0]);
+    }
+
     try {
-      const response = await api.post('/admin/item/new', data);
+      const response = await api.post('/admin/item/new', formData);
       if (response.data.success) {
         alert('상품이 등록되었습니다.');
         router.push('/admin/item/list');
@@ -31,6 +56,7 @@ export default function ItemNewPage() {
         alert('관리자 권한이 없습니다.');
         router.push('/');
       } else {
+        console.error(err);
         setErrorMsg(err.response?.data?.message || '서버 오류가 발생했습니다.');
       }
     }
@@ -104,6 +130,23 @@ export default function ItemNewPage() {
                 {errors.itemDetail && <p className="mt-1 text-xs text-red-500">{errors.itemDetail.message}</p>}
               </div>
 
+              {/* 이미지 업로드 */}
+              <div>
+                <label className={labelClass}>상품 이미지</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className={inputClass}
+                  {...register('itemImgFile')}
+                  onChange={handleImageChange}
+                />
+                {preview && (
+                  <div className="mt-4">
+                    <img src={preview} alt="미리보기" className="w-40 h-40 object-cover rounded border" />
+                  </div>
+                )}
+              </div>
+
               {/* 에러 메시지 */}
               {errorMsg && (
                 <div className="p-3 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
@@ -111,7 +154,7 @@ export default function ItemNewPage() {
                 </div>
               )}
 
-              {/* 버튼 */}
+              {/* 버튼 영역 */}
               <div className="flex justify-between pt-4">
                 <button
                   type="button"

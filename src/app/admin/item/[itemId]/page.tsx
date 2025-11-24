@@ -14,6 +14,10 @@ export default function ItemEditPage() {
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<ItemFormInputs>();
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  
+  const [originalImgUrl, setOriginalImgUrl] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [deleteImage, setDeleteImage] = useState(false);
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -26,6 +30,10 @@ export default function ItemEditPage() {
         setValue('stockNumber', data.stockNumber);
         setValue('itemDetail', data.itemDetail);
         setValue('itemSellStatus', data.itemSellStatus);
+        
+        if (data.imgUrl) {
+          setOriginalImgUrl(data.imgUrl);
+        }
         
         setLoading(false);
       } catch (error) {
@@ -40,11 +48,42 @@ export default function ItemEditPage() {
     }
   }, [itemId, setValue, router]);
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPreview(null);
+    }
+  };
+
+  const handleDeleteOriginalImage = () => {
+    setDeleteImage(true);
+    setOriginalImgUrl(null);
+  };
+
   const onSubmit = async (data: ItemFormInputs) => {
     setErrorMsg('');
     
+    const formData = new FormData();
+    formData.append('itemNm', data.itemNm);
+    formData.append('price', data.price.toString());
+    formData.append('stockNumber', data.stockNumber.toString());
+    formData.append('itemDetail', data.itemDetail);
+    formData.append('itemSellStatus', data.itemSellStatus);
+    
+    if (data.itemImgFile && data.itemImgFile.length > 0) {
+      formData.append('itemImgFile', data.itemImgFile[0]);
+    }
+
+    formData.append('deleteImage', deleteImage.toString());
+
     try {
-      const response = await api.post(`/admin/item/${itemId}`, data);
+      const response = await api.post(`/admin/item/${itemId}`, formData);
       if (response.data.success) {
         alert('상품 정보가 수정되었습니다.');
         router.push('/admin/item/list');
@@ -82,55 +121,78 @@ export default function ItemEditPage() {
               {/* 상품명 */}
               <div>
                 <label className={labelClass}>상품명</label>
-                <input
-                  type="text"
-                  className={inputClass}
-                  placeholder="상품명을 입력하세요"
-                  {...register('itemNm', { required: '상품명은 필수입니다.' })}
-                />
-                {errors.itemNm && <p className="mt-1 text-xs text-red-500">{errors.itemNm.message}</p>}
+                <input type="text" className={inputClass} {...register('itemNm', { required: true })} />
               </div>
 
               {/* 가격 */}
               <div>
                 <label className={labelClass}>가격</label>
-                <input
-                  type="number"
-                  className={inputClass}
-                  placeholder="가격을 입력하세요"
-                  {...register('price', { required: '가격은 필수입니다.', min: { value: 0, message: '가격은 0원 이상이어야 합니다.' } })}
-                />
-                {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price.message}</p>}
+                <input type="number" className={inputClass} {...register('price', { required: true })} />
               </div>
 
               {/* 재고 */}
               <div>
                 <label className={labelClass}>재고 수량</label>
-                <input
-                  type="number"
-                  className={inputClass}
-                  placeholder="재고 수량을 입력하세요"
-                  {...register('stockNumber', { required: '재고 수량은 필수입니다.', min: { value: 0, message: '재고는 0개 이상이어야 합니다.' } })}
-                />
-                {errors.stockNumber && <p className="mt-1 text-xs text-red-500">{errors.stockNumber.message}</p>}
+                <input type="number" className={inputClass} {...register('stockNumber', { required: true })} />
               </div>
 
               {/* 상세 설명 */}
               <div>
                 <label className={labelClass}>상품 상세 설명</label>
-                <textarea
-                  className={`${inputClass} h-32 resize-none`}
-                  placeholder="상품 상세 설명을 입력하세요"
-                  {...register('itemDetail', { required: '상세 설명은 필수입니다.' })}
+                <textarea className={`${inputClass} h-32 resize-none`} {...register('itemDetail', { required: true })} />
+              </div>
+
+              {/* 이미지 처리 영역 */}
+              <div className="p-4 bg-gray-50 rounded border border-gray-200">
+                <label className={labelClass}>상품 이미지</label>
+                {originalImgUrl && !deleteImage && !preview && (
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-500 mb-2">현재 등록된 이미지</p>
+                    <div className="relative inline-block">
+                      <img 
+                        src={`http://localhost:8080${originalImgUrl}`} 
+                        alt="Current" 
+                        className="w-40 h-40 object-cover rounded border" 
+                      />
+                      <button
+                        type="button"
+                        onClick={handleDeleteOriginalImage}
+                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 transform translate-x-1/2 -translate-y-1/2 shadow-md hover:bg-red-600"
+                        title="이미지 삭제"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {preview && (
+                  <div className="mb-4">
+                    <p className="text-xs text-green-600 mb-2">새로 변경될 이미지</p>
+                    <img src={preview} alt="New Preview" className="w-40 h-40 object-cover rounded border border-green-500" />
+                  </div>
+                )}
+
+                {deleteImage && !preview && (
+                  <div className="mb-4 text-sm text-red-500 font-medium">
+                    * 기존 이미지가 삭제됩니다.
+                  </div>
+                )}
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  className={inputClass}
+                  {...register('itemImgFile')}
+                  onChange={handleImageChange}
                 />
-                {errors.itemDetail && <p className="mt-1 text-xs text-red-500">{errors.itemDetail.message}</p>}
               </div>
 
               {/* 에러 메시지 */}
               {errorMsg && (
-                <div className="p-3 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
-                  {errorMsg}
-                </div>
+                <div className="p-3 text-sm text-red-700 bg-red-100 rounded-lg">{errorMsg}</div>
               )}
 
               {/* 버튼 */}
