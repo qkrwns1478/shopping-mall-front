@@ -10,7 +10,11 @@ export async function proxy(request: NextRequest) {
   const protectedPages = ['/mypage'];
   const isProtectedPage = protectedPages.some((page) => request.nextUrl.pathname.startsWith(page));
 
-  if (!isAuthPage && !isProtectedPage) {
+  /* 관리자 전용 페이지 */
+  const adminPages = ['/admin'];
+  const isAdminPage = adminPages.some((page) => request.nextUrl.pathname.startsWith(page));
+
+  if (!isAuthPage && !isProtectedPage && !isAdminPage) {
     return NextResponse.next();
   }
 
@@ -24,20 +28,33 @@ export async function proxy(request: NextRequest) {
       cache: 'no-store',
       redirect: 'manual',
     });
-    const isLoggedIn = res.status === 200;
 
-    if (isLoggedIn && isAuthPage) {
-      return NextResponse.redirect(new URL('/', request.url));
+    if (res.status !== 200) {
+      if (isProtectedPage || isAdminPage) {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+      return NextResponse.next();
     }
 
-    if (!isLoggedIn && isProtectedPage) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
-      return NextResponse.redirect(loginUrl);
+    const userInfo = await res.json();
+    const { role } = userInfo;
+
+    if (isAuthPage) {
+      const url = new URL('/', request.url);
+      url.searchParams.set('alert', 'invalid_access');
+      return NextResponse.redirect(url);
+    }
+
+    if (isAdminPage && role !== 'ADMIN') {
+      const url = new URL('/', request.url);
+      url.searchParams.set('alert', 'admin_required');
+      return NextResponse.redirect(url);
     }
 
   } catch (error) {
-    console.error('proxy auth check error:', error);
+    console.error('middleware auth check error:', error);
     return NextResponse.next();
   }
 
@@ -50,6 +67,7 @@ export const config = {
     '/signup', 
     '/signup-success', 
     '/forgot-password', 
-    '/mypage/:path*'
+    '/mypage/:path*',
+    '/admin/:path*'
   ],
 };

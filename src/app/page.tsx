@@ -1,6 +1,24 @@
+'use client';
+
 import Image from "next/image";
+import { useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 export default function Home() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    const alertType = searchParams.get('alert');
+    if (alertType === 'invalid_access') {
+      alert("잘못된 접근입니다.");
+      router.replace('/'); 
+    } else if (alertType === 'admin_required') {
+      alert("관리자 권한이 필요합니다.");
+      router.replace('/'); 
+    }
+  }, [searchParams, router]);
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
