@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
@@ -12,7 +12,7 @@ interface Member {
   birthday: string;
 }
 
-export default function MyPage() {
+function MyPageContent() {
   const searchParams = useSearchParams();
   const success = searchParams.get('success');
 
@@ -123,5 +123,13 @@ export default function MyPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MyPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-20">로딩 중...</div>}>
+      <MyPageContent />
+    </Suspense>
   );
 }
