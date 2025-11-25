@@ -21,7 +21,7 @@ export async function proxy(request: NextRequest) {
   try {
     const cookieHeader = request.headers.get('cookie') || '';
     
-    const res = await fetch('http://localhost:8080/members/info', {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/members/info`, {
       headers: {
         Cookie: cookieHeader,
       },
