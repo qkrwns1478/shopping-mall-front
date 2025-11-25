@@ -26,7 +26,7 @@ export async function proxy(request: NextRequest) {
         Cookie: cookieHeader,
       },
       cache: 'no-store',
-      redirect: 'manual',
+      // redirect: 'manual',
     });
 
     if (res.status !== 200) {
@@ -55,6 +55,11 @@ export async function proxy(request: NextRequest) {
 
   } catch (error) {
     console.error('middleware auth check error:', error);
+    
+    if (isProtectedPage || isAdminPage) {
+      return NextResponse.redirect(new URL('/', request.url)); 
+    }
+    
     return NextResponse.next();
   }
 
