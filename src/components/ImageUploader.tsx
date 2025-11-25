@@ -1,7 +1,131 @@
 'use client';
 
 import { useState } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { motion } from 'framer-motion';
 import api from '@/lib/api';
+
+interface ImageCardProps {
+  url: string;
+  index: number;
+  onRemove?: (index: number) => void;
+  onSetRep?: (index: number) => void;
+  isDragging?: boolean;
+  isOverlay?: boolean;
+}
+
+function ImageCard({ url, index, onRemove, onSetRep, isDragging, isOverlay }: ImageCardProps) {
+  return (
+    <div
+      className={`relative w-full h-full rounded-lg overflow-hidden border-2 bg-white touch-none ${
+        !isOverlay && index === 0
+          ? 'border-blue-500 ring-2 ring-blue-200'
+          : 'border-gray-200 hover:border-gray-400'
+      } ${isDragging ? 'opacity-30' : 'opacity-100'} ${isOverlay ? 'shadow-2xl scale-105 border-blue-400 cursor-grabbing' : ''}`}
+    >
+      <img
+        src={`http://localhost:8080${url}`}
+        alt="product-img"
+        className="w-full h-full object-cover pointer-events-none"
+      />
+
+      {!isOverlay && index === 0 && (
+        <div className="absolute top-0 left-0 bg-blue-600 text-white text-xs px-2 py-1 font-bold z-10 rounded-br">
+          대표
+        </div>
+      )}
+
+      {!isOverlay && !isDragging && onRemove && onSetRep && (
+        <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
+          {index !== 0 && (
+            <button
+              type="button"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => onSetRep(index)}
+              className="bg-white/90 backdrop-blur-sm text-yellow-500 p-1.5 rounded shadow-sm hover:bg-white hover:scale-105 transition-all border border-gray-200 cursor-pointer"
+              title="대표 이미지로 설정"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                <path fillRule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clipRule="evenodd" />
+              </svg>
+            </button>
+          )}
+          <button
+            type="button"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => onRemove(index)}
+            className="bg-white/90 backdrop-blur-sm text-gray-500 p-1.5 rounded shadow-sm hover:bg-white hover:text-red-500 hover:scale-105 transition-all border border-gray-200 cursor-pointer"
+            title="삭제"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface SortableItemProps {
+  url: string;
+  index: number;
+  onRemove: (index: number) => void;
+  onSetRep: (index: number) => void;
+  isSorting: boolean;
+}
+
+function SortableItem({ url, index, onRemove, onSetRep, isSorting }: SortableItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: url });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="aspect-square group relative">
+      <motion.div
+        layout={!isSorting} 
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className="w-full h-full"
+      >
+        <ImageCard
+          url={url}
+          index={index}
+          onRemove={onRemove}
+          onSetRep={onSetRep}
+          isDragging={isDragging}
+        />
+      </motion.div>
+    </div>
+  );
+}
 
 interface ImageUploaderProps {
   urls: string[];
@@ -9,7 +133,37 @@ interface ImageUploaderProps {
 }
 
 export default function ImageUploader({ urls, onChange }: ImageUploaderProps) {
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = urls.indexOf(active.id as string);
+      const newIndex = urls.indexOf(over.id as string);
+      onChange(arrayMove(urls, oldIndex, newIndex));
+    }
+    setActiveId(null);
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
@@ -30,7 +184,6 @@ export default function ImageUploader({ urls, onChange }: ImageUploaderProps) {
       }
       formData.delete('file');
     }
-    
     onChange([...urls, ...newUploadedUrls]);
     e.target.value = ''; 
   };
@@ -47,26 +200,10 @@ export default function ImageUploader({ urls, onChange }: ImageUploaderProps) {
     onChange(newUrls);
   };
 
-  const handleDragStart = (index: number) => {
-    setDraggedIndex(index);
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    if (draggedIndex === null || draggedIndex === index) return;
-
-    const newUrls = [...urls];
-    const [draggedItem] = newUrls.splice(draggedIndex, 1);
-    newUrls.splice(index, 0, draggedItem);
-    
-    onChange(newUrls);
-    setDraggedIndex(index);
-  };
-
   return (
     <div className="p-4 bg-gray-50 rounded border border-gray-200">
       <label className="block mb-2 text-sm font-bold text-gray-700">
-        상품 이미지 (드래그로 순서 변경)
+        상품 이미지
       </label>
       
       <input
@@ -77,56 +214,36 @@ export default function ImageUploader({ urls, onChange }: ImageUploaderProps) {
         onChange={handleImageUpload}
       />
 
-      <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
-        {urls.map((url, index) => (
-          <div
-            key={url}
-            draggable
-            onDragStart={() => handleDragStart(index)}
-            onDragOver={(e) => handleDragOver(e, index)}
-            className={`relative group aspect-square rounded-lg overflow-hidden border-2 cursor-move bg-white transition-colors ${
-              index === 0 ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-400'
-            }`}
-          >
-            <img
-              src={`http://localhost:8080${url}`}
-              alt={`img-${index}`}
-              className="w-full h-full object-cover"
-            />
-            
-            {index === 0 && (
-              <div className="absolute top-0 left-0 bg-blue-600 text-white text-xs px-2 py-1 font-bold z-10 rounded-br">
-                대표
-              </div>
-            )}
-
-            <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
-              {index !== 0 && (
-                <button
-                  type="button"
-                  onClick={() => handleSetRepresentative(index)}
-                  className="bg-white/90 backdrop-blur-sm text-yellow-500 p-1.5 rounded shadow-sm hover:bg-white hover:scale-105 transition-all border border-gray-200"
-                  title="대표 이미지로 설정"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                    <path fillRule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => handleDeleteImage(index)}
-                className="bg-white/90 backdrop-blur-sm text-gray-500 p-1.5 rounded shadow-sm hover:bg-white hover:text-red-500 hover:scale-105 transition-all border border-gray-200"
-                title="삭제"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <SortableContext items={urls} strategy={rectSortingStrategy}>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+            {urls.map((url, index) => (
+              <SortableItem
+                key={url}
+                url={url}
+                index={index}
+                onRemove={handleDeleteImage}
+                onSetRep={handleSetRepresentative}
+                isSorting={!!activeId}
+              />
+            ))}
           </div>
-        ))}
-      </div>
+        </SortableContext>
+
+        <DragOverlay adjustScale={true}>
+          {activeId ? (
+            <div className="aspect-square">
+              <ImageCard url={activeId} index={-1} isOverlay />
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
       
       {urls.length === 0 && (
         <div className="text-sm text-gray-400 text-center py-8 border-2 border-dashed border-gray-300 rounded-lg mt-2 bg-white">
