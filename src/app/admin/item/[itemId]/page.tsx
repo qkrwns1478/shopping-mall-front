@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useRouter, useParams } from 'next/navigation';
 import api from '@/lib/api';
 import { ItemFormInputs } from '@/types/item';
+import ImageUploader from '@/components/ImageUploader';
 
 export default function ItemEditPage() {
   const router = useRouter();
@@ -13,11 +14,7 @@ export default function ItemEditPage() {
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<ItemFormInputs>();
   const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState('');
-  
-  const [originalImgUrl, setOriginalImgUrl] = useState<string | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [deleteImage, setDeleteImage] = useState(false);
+  const [imgUrls, setImgUrls] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -31,67 +28,37 @@ export default function ItemEditPage() {
         setValue('itemDetail', data.itemDetail);
         setValue('itemSellStatus', data.itemSellStatus);
         
-        if (data.imgUrl) {
-          setOriginalImgUrl(data.imgUrl);
+        if (data.imgUrlList) {
+          setImgUrls(data.imgUrlList);
         }
         
         setLoading(false);
       } catch (error) {
-        console.error('Failed to fetch item:', error);
+        console.error(error);
         alert('상품 정보를 불러오는데 실패했습니다.');
         router.push('/admin/item/list');
       }
     };
 
-    if (itemId) {
-      fetchItem();
-    }
+    if (itemId) fetchItem();
   }, [itemId, setValue, router]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setPreview(null);
-    }
-  };
-
-  const handleDeleteOriginalImage = () => {
-    setDeleteImage(true);
-    setOriginalImgUrl(null);
-  };
-
   const onSubmit = async (data: ItemFormInputs) => {
-    setErrorMsg('');
-    
-    const formData = new FormData();
-    formData.append('itemNm', data.itemNm);
-    formData.append('price', data.price.toString());
-    formData.append('stockNumber', data.stockNumber.toString());
-    formData.append('itemDetail', data.itemDetail);
-    formData.append('itemSellStatus', data.itemSellStatus);
-    
-    if (data.itemImgFile && data.itemImgFile.length > 0) {
-      formData.append('itemImgFile', data.itemImgFile[0]);
-    }
-
-    formData.append('deleteImage', deleteImage.toString());
+    const payload = {
+      ...data,
+      imgUrlList: imgUrls
+    };
 
     try {
-      const response = await api.post(`/admin/item/${itemId}`, formData);
+      const response = await api.post(`/admin/item/${itemId}`, payload);
       if (response.data.success) {
         alert('상품 정보가 수정되었습니다.');
         router.push('/admin/item/list');
       } else {
-        setErrorMsg(response.data.message || '상품 수정에 실패했습니다.');
+        alert(response.data.message);
       }
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || '서버 오류가 발생했습니다.');
+      alert(err.response?.data?.message || '오류가 발생했습니다.');
     }
   };
 
@@ -142,58 +109,11 @@ export default function ItemEditPage() {
                 <textarea className={`${inputClass} h-32 resize-none`} {...register('itemDetail', { required: true })} />
               </div>
 
-              {/* 이미지 처리 영역 */}
-              <div className="p-4 bg-gray-50 rounded border border-gray-200">
-                <label className={labelClass}>상품 이미지</label>
-                {originalImgUrl && !deleteImage && !preview && (
-                  <div className="mb-4">
-                    <p className="text-xs text-gray-500 mb-2">현재 등록된 이미지</p>
-                    <div className="relative inline-block">
-                      <img 
-                        src={`http://localhost:8080${originalImgUrl}`} 
-                        alt="Current" 
-                        className="w-40 h-40 object-cover rounded border" 
-                      />
-                      <button
-                        type="button"
-                        onClick={handleDeleteOriginalImage}
-                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 transform translate-x-1/2 -translate-y-1/2 shadow-md hover:bg-red-600"
-                        title="이미지 삭제"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {preview && (
-                  <div className="mb-4">
-                    <p className="text-xs text-green-600 mb-2">새로 변경될 이미지</p>
-                    <img src={preview} alt="New Preview" className="w-40 h-40 object-cover rounded border border-green-500" />
-                  </div>
-                )}
-
-                {deleteImage && !preview && (
-                  <div className="mb-4 text-sm text-red-500 font-medium">
-                    * 기존 이미지가 삭제됩니다.
-                  </div>
-                )}
-
-                <input
-                  type="file"
-                  accept="image/*"
-                  className={inputClass}
-                  {...register('itemImgFile')}
-                  onChange={handleImageChange}
-                />
-              </div>
-
-              {/* 에러 메시지 */}
-              {errorMsg && (
-                <div className="p-3 text-sm text-red-700 bg-red-100 rounded-lg">{errorMsg}</div>
-              )}
+              {/* 이미지 업로드 */}
+              <ImageUploader 
+                urls={imgUrls} 
+                onChange={setImgUrls} 
+              />
 
               {/* 버튼 */}
               <div className="flex justify-between pt-4">

@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { ItemFormInputs } from '@/types/item';
+import ImageUploader from '@/components/ImageUploader';
 
 export default function ItemNewPage() {
   const router = useRouter();
@@ -13,52 +14,24 @@ export default function ItemNewPage() {
       itemSellStatus: 'SELL'
     }
   });
-  const [errorMsg, setErrorMsg] = useState('');
-  const [preview, setPreview] = useState<string | null>(null);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setPreview(null);
-    }
-  };
+  const [imgUrls, setImgUrls] = useState<string[]>([]);
 
   const onSubmit = async (data: ItemFormInputs) => {
-    setErrorMsg('');
-    
-    const formData = new FormData();
-    formData.append('itemNm', data.itemNm);
-    formData.append('price', data.price.toString());
-    formData.append('stockNumber', data.stockNumber.toString());
-    formData.append('itemDetail', data.itemDetail);
-    formData.append('itemSellStatus', data.itemSellStatus);
-    
-    if (data.itemImgFile && data.itemImgFile.length > 0) {
-      formData.append('itemImgFile', data.itemImgFile[0]);
-    }
+    const payload = {
+      ...data,
+      imgUrlList: imgUrls
+    };
 
     try {
-      const response = await api.post('/admin/item/new', formData);
+      const response = await api.post('/admin/item/new', payload);
       if (response.data.success) {
         alert('상품이 등록되었습니다.');
         router.push('/admin/item/list');
       } else {
-        setErrorMsg(response.data.message || '상품 등록에 실패했습니다.');
+        alert(response.data.message);
       }
     } catch (err: any) {
-      if (err.response?.status === 403) {
-        alert('관리자 권한이 없습니다.');
-        router.push('/');
-      } else {
-        console.error(err);
-        setErrorMsg(err.response?.data?.message || '서버 오류가 발생했습니다.');
-      }
+      alert(err.response?.data?.message || '오류가 발생했습니다.');
     }
   };
 
@@ -131,41 +104,23 @@ export default function ItemNewPage() {
               </div>
 
               {/* 이미지 업로드 */}
-              <div>
-                <label className={labelClass}>상품 이미지</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className={inputClass}
-                  {...register('itemImgFile')}
-                  onChange={handleImageChange}
-                />
-                {preview && (
-                  <div className="mt-4">
-                    <img src={preview} alt="미리보기" className="w-40 h-40 object-cover rounded border" />
-                  </div>
-                )}
-              </div>
-
-              {/* 에러 메시지 */}
-              {errorMsg && (
-                <div className="p-3 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
-                  {errorMsg}
-                </div>
-              )}
+              <ImageUploader 
+                urls={imgUrls} 
+                onChange={setImgUrls} 
+              />
 
               {/* 버튼 영역 */}
               <div className="flex justify-between pt-4">
                 <button
                   type="button"
                   onClick={() => router.push('/admin/item/list')}
-                  className="px-4 py-2 font-medium text-gray-700 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 transition"
+                  className="px-4 py-2 font-medium text-gray-700 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50"
                 >
                   취소
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 font-bold text-white bg-blue-600 rounded shadow hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition"
+                  className="px-6 py-2 font-bold text-white bg-blue-600 rounded shadow hover:bg-blue-700"
                 >
                   저장하기
                 </button>
