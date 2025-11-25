@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   /* 로그인이 되어 있으면 접근하면 안 되는 페이지 */
   const authPages = ['/login', '/signup', '/signup-success', '/forgot-password'];
   const isAuthPage = authPages.some((page) => request.nextUrl.pathname.startsWith(page));
