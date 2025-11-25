@@ -7,7 +7,7 @@ export interface ItemFormInputs {
   stockNumber: number;
   itemDetail: string;
   itemSellStatus: ItemSellStatus;
-  itemImgFile?: FileList;
+  imgUrlList: string[];
 }
 
 /* 상품 리스트 조회용 타입 */
@@ -18,7 +18,7 @@ export interface Item {
   stockNumber: number;
   itemSellStatus: ItemSellStatus;
   itemDetail?: string;
+  imgUrlList: string[];
   regTime: string;
   updateTime?: string;
-  imgUrl?: string;
 }
