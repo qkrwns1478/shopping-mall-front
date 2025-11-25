@@ -11,6 +11,12 @@ export default function MemberListPage() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [newRole, setNewRole] = useState<'USER' | 'ADMIN'>('USER');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isCodeSent, setIsCodeSent] = useState(false);
+
   const fetchMembers = async (pageNum: number) => {
     try {
       setLoading(true);
@@ -46,6 +52,59 @@ export default function MemberListPage() {
     }
   };
 
+  const openRoleModal = (member: Member) => {
+    setSelectedMember(member);
+    setNewRole(member.role);
+    setVerificationCode('');
+    setIsCodeSent(false);
+    setIsModalOpen(true);
+  };
+
+  const sendVerificationCode = async () => {
+    if (!selectedMember) return;
+
+    try {
+      const payload = {
+        email: selectedMember.email,
+        name: selectedMember.name,
+        currentRole: selectedMember.role,
+        newRole: newRole
+      };
+
+      const response = await api.post('/admin/members/role/send-verification', payload);
+      
+      if (response.data.success) {
+        alert('관리자 이메일로 인증 코드가 발송되었습니다.');
+        setIsCodeSent(true);
+      } else {
+        alert(response.data.message);
+      }
+    } catch (error: any) {
+      alert(error.response?.data?.message || '코드 발송 실패');
+    }
+  };
+
+  const handleSubmitRoleChange = async () => {
+    if (!selectedMember || !verificationCode) return;
+
+    try {
+      const response = await api.post(`/admin/members/${selectedMember.id}/role`, {
+        role: newRole,
+        code: verificationCode
+      });
+
+      if (response.data.success) {
+        alert('권한이 변경되었습니다.');
+        setIsModalOpen(false);
+        fetchMembers(page);
+      } else {
+        alert(response.data.message);
+      }
+    } catch (error: any) {
+      alert(error.response?.data?.message || '권한 변경 실패');
+    }
+  };
+
   if (loading) return <div className="text-center py-20">로딩 중...</div>;
 
   return (
@@ -67,40 +126,35 @@ export default function MemberListPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {members.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">가입된 회원이 없습니다.</td>
+            {members.map((member) => (
+              <tr key={member.id}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{member.id}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{member.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{member.email}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                    member.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {member.role}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button 
+                    onClick={() => openRoleModal(member)}
+                    className="text-blue-600 hover:text-blue-900 mr-4"
+                  >
+                    권한 변경
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(member.id)} 
+                    className="text-red-600 hover:text-red-900"
+                    disabled={member.role === 'ADMIN'}
+                  >
+                    강제 탈퇴
+                  </button>
+                </td>
               </tr>
-            ) : (
-              members.map((member) => (
-                <tr key={member.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{member.id}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {member.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{member.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-xs" title={member.address}>
-                    {member.address}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      member.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {member.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button 
-                      onClick={() => handleDelete(member.id)} 
-                      className="text-red-600 hover:text-red-900"
-                      disabled={member.role === 'ADMIN'} // 관리자 자신은 삭제 불가 (선택적)
-                    >
-                      강제 탈퇴
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
+            ))}
           </tbody>
         </table>
       </div>
@@ -121,6 +175,69 @@ export default function MemberListPage() {
               {i + 1}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* 권한 변경 모달 */}
+      {isModalOpen && selectedMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="px-6 py-4 border-b bg-gray-50">
+              <h3 className="text-lg font-bold text-gray-900">권한 변경</h3>
+              <p className="text-sm text-gray-500 mt-1">{selectedMember.email}</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">변경할 권한</label>
+                <select 
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value as 'USER' | 'ADMIN')}
+                  className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="USER">USER</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
+              </div>
+
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                <p className="text-xs text-yellow-700">
+                  보안을 위해 현재 로그인된 관리자 계정의 이메일로 인증 코드가 발송됩니다.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="인증 코드 입력"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  className="flex-1 border border-gray-300 rounded-md p-2"
+                  disabled={!isCodeSent}
+                />
+                <button
+                  onClick={sendVerificationCode}
+                  className="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm font-medium whitespace-nowrap"
+                >
+                  {isCodeSent ? '코드 재발송' : '인증 코드 발송'}
+                </button>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSubmitRoleChange}
+                disabled={!isCodeSent || !verificationCode}
+                className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 disabled:bg-blue-300"
+              >
+                변경 확인
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
