@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from 'next/link';
 import api from '@/lib/api';
 import { BsArrowRight } from "react-icons/bs";
+import { useModal } from "@/context/ModalContext";
 
 interface MainItem {
   id: number;
@@ -18,19 +19,20 @@ interface MainItem {
 function HomeContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { showAlert } = useModal();
   const [serverStatus, setServerStatus] = useState<'loading' | 'up' | 'down'>('loading');
   const [mainItems, setMainItems] = useState<MainItem[]>([]);
 
   useEffect(() => {
     const alertType = searchParams.get('alert');
     if (alertType === 'invalid_access') {
-      alert("잘못된 접근입니다.");
+      showAlert("잘못된 접근입니다.");
       router.replace('/');
     } else if (alertType === 'admin_required') {
-      alert("관리자 권한이 필요합니다.");
+      showAlert("관리자 권한이 필요합니다.");
       router.replace('/');
     }
-  }, [searchParams, router]);
+  }, [searchParams, router, showAlert]);
 
   useEffect(() => {
     const checkServerAndFetchItems = async () => {

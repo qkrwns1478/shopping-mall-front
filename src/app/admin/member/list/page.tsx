@@ -4,8 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { Member } from '@/types/member';
+import { useModal } from "@/context/ModalContext";
 
 export default function MemberListPage() {
+  const { showAlert } = useModal();
+
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -26,7 +29,7 @@ export default function MemberListPage() {
       setPage(response.data.number);
     } catch (error) {
       console.error('Failed to fetch members:', error);
-      alert('회원 목록을 불러오는데 실패했습니다.');
+      showAlert('회원 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -42,13 +45,13 @@ export default function MemberListPage() {
     try {
       const response = await api.delete(`/admin/members/${id}`);
       if (response.data.success) {
-        alert('회원이 탈퇴 처리되었습니다.');
+        showAlert('회원이 탈퇴 처리되었습니다.');
         fetchMembers(page);
       } else {
-        alert(response.data.message);
+        showAlert(response.data.message);
       }
     } catch (error: any) {
-      alert(error.response?.data?.message || '삭제 중 오류가 발생했습니다.');
+      showAlert(error.response?.data?.message || '삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -74,13 +77,13 @@ export default function MemberListPage() {
       const response = await api.post('/admin/members/role/send-verification', payload);
       
       if (response.data.success) {
-        alert('관리자 이메일로 인증 코드가 발송되었습니다.');
+        showAlert('관리자 이메일로 인증 코드가 발송되었습니다.');
         setIsCodeSent(true);
       } else {
-        alert(response.data.message);
+        showAlert(response.data.message);
       }
     } catch (error: any) {
-      alert(error.response?.data?.message || '코드 발송 실패');
+      showAlert(error.response?.data?.message || '코드 발송 실패');
     }
   };
 
@@ -94,14 +97,14 @@ export default function MemberListPage() {
       });
 
       if (response.data.success) {
-        alert('권한이 변경되었습니다.');
+        showAlert('권한이 변경되었습니다.');
         setIsModalOpen(false);
         fetchMembers(page);
       } else {
-        alert(response.data.message);
+        showAlert(response.data.message);
       }
     } catch (error: any) {
-      alert(error.response?.data?.message || '권한 변경 실패');
+      showAlert(error.response?.data?.message || '권한 변경 실패');
     }
   };
 

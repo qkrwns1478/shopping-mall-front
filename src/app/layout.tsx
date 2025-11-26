@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { ModalProvider } from "@/context/ModalContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,11 +18,13 @@ export default function RootLayout({
     <html lang="ko">
       <head></head>
       <body className="flex flex-col min-h-screen">
-        <Header />
-        <main className="flex-grow">
-          {children}
-        </main>
-        <Footer />
+        <ModalProvider>
+          <Header />
+          <main className="flex-grow">
+            {children}
+          </main>
+          <Footer />
+        </ModalProvider>
       </body>
     </html>
   );

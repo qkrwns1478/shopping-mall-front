@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
+import { useModal } from "@/context/ModalContext";
 
 interface Category {
   id: number;
@@ -9,6 +10,7 @@ interface Category {
 }
 
 export default function CategoryManagePage() {
+  const { showAlert, showConfirm } = useModal();
   const [categories, setCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [loading, setLoading] = useState(true);
@@ -19,7 +21,7 @@ export default function CategoryManagePage() {
       setCategories(response.data);
     } catch (error) {
       console.error(error);
-      alert('카테고리 목록 로드 실패');
+      showAlert('카테고리 목록 로드 실패');
     } finally {
       setLoading(false);
     }
@@ -34,25 +36,27 @@ export default function CategoryManagePage() {
     try {
       const res = await api.post('/api/categories', { name: newCategoryName });
       if (res.data.success) {
-        alert('카테고리가 추가되었습니다.');
+        showAlert('카테고리가 추가되었습니다.', "성공");
         setNewCategoryName('');
         fetchCategories();
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || '추가 실패');
+      showAlert(err.response?.data?.message || '추가 실패', "오류");
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
-    try {
-      const res = await api.delete(`/api/categories/${id}`);
-      if (res.data.success) {
-        fetchCategories();
+    showConfirm('정말 삭제하시겠습니까?\n사용 중인 상품이 있다면 삭제되지 않을 수 있습니다.', async () => {
+      try {
+        const res = await api.delete(`/api/categories/${id}`);
+        if (res.data.success) {
+          showAlert('삭제되었습니다.', "성공");
+          fetchCategories();
+        }
+      } catch (err: any) {
+        showAlert('삭제 실패: 사용 중인 카테고리일 수 있습니다.', "오류");
       }
-    } catch (err: any) {
-      alert('삭제 실패: 사용 중인 카테고리일 수 있습니다.');
-    }
+    });
   };
 
   return (

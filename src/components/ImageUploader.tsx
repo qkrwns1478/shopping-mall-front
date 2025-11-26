@@ -22,6 +22,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
 import api from '@/lib/api';
+import { useModal } from "@/context/ModalContext";
 
 interface ImageCardProps {
   url: string;
@@ -133,6 +134,7 @@ interface ImageUploaderProps {
 }
 
 export default function ImageUploader({ urls, onChange }: ImageUploaderProps) {
+  const { showAlert } = useModal();
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -180,7 +182,7 @@ export default function ImageUploader({ urls, onChange }: ImageUploaderProps) {
         }
       } catch (error) {
         console.error('Image upload failed:', error);
-        alert('일부 이미지를 업로드하는데 실패했습니다.');
+        showAlert('일부 이미지를 업로드하는데 실패했습니다.');
       }
       formData.delete('file');
     }

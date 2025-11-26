@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import api from '@/lib/api';
+import { useModal } from "@/context/ModalContext";
 
 declare global {
   interface Window {
@@ -25,6 +26,7 @@ interface EditProfileInputs {
 
 export default function EditProfilePage() {
   const router = useRouter();
+  const { showAlert } = useModal();
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<EditProfileInputs>();
   
   const [loading, setLoading] = useState(true);
@@ -50,10 +52,10 @@ export default function EditProfilePage() {
       } catch (error: any) {
         console.error(error);
         if (error.response?.status === 403) {
-          alert('접근 권한이 없습니다. 비밀번호 확인이 필요합니다.');
+          showAlert('접근 권한이 없습니다. 비밀번호 확인이 필요합니다.');
           router.replace('/mypage/check-password');
         } else {
-          alert('회원 정보를 불러오는데 실패했습니다.');
+          showAlert('회원 정보를 불러오는데 실패했습니다.');
           router.push('/');
         }
       }
@@ -129,13 +131,13 @@ export default function EditProfilePage() {
     try {
       const response = await api.post('/members/withdraw', { password: withdrawPassword });
       if (response.data.success) {
-        alert('탈퇴 처리되었습니다.');
+        showAlert('탈퇴 처리되었습니다.');
         window.location.href = '/';
       } else {
-        alert(response.data.message || '탈퇴 실패');
+        showAlert(response.data.message || '탈퇴 실패');
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || '오류가 발생했습니다.');
+      showAlert(err.response?.data?.message || '오류가 발생했습니다.');
     }
   };
 

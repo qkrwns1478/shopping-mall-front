@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { useModal } from "@/context/ModalContext";
 
 interface MainItem {
   id: number;
@@ -20,6 +21,7 @@ interface Product {
 }
 
 export default function AdminMainItemPage() {
+  const { showAlert, showConfirm } = useModal();
   const [mainItems, setMainItems] = useState<MainItem[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -34,7 +36,7 @@ export default function AdminMainItemPage() {
       setMainItems(response.data);
     } catch (error) {
       console.error(error);
-      alert('메인 상품 목록을 불러오는데 실패했습니다.');
+      showAlert('메인 상품 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -65,30 +67,31 @@ export default function AdminMainItemPage() {
     try {
       const response = await api.post('/admin/main/items', { itemId });
       if (response.data.success) {
-        alert('메인 상품으로 등록되었습니다.');
+        showAlert('메인 상품으로 등록되었습니다.');
         setIsModalOpen(false);
         fetchMainItems();
       } else {
-        alert(response.data.message);
+        showAlert(response.data.message);
       }
     } catch (error: any) {
-      alert(error.response?.data?.message || '등록 중 오류가 발생했습니다.');
+      showAlert(error.response?.data?.message || '등록 중 오류가 발생했습니다.');
     }
   };
 
   const handleDelete = async (mainItemId: number) => {
-    if (!confirm('정말로 메인 목록에서 삭제하시겠습니까?')) return;
-
-    try {
-      const response = await api.delete(`/admin/main/items/${mainItemId}`);
-      if (response.data.success) {
-        fetchMainItems();
-      } else {
-        alert(response.data.message);
+    showConfirm('정말로 메인 목록에서 삭제하시겠습니까?', async () => {
+      try {
+        const response = await api.delete(`/admin/main/items/${mainItemId}`);
+        if (response.data.success) {
+          fetchMainItems();
+          showAlert('삭제되었습니다.');
+        } else {
+          showAlert(response.data.message);
+        }
+      } catch (error: any) {
+        showAlert(error.response?.data?.message || '삭제 중 오류가 발생했습니다.');
       }
-    } catch (error: any) {
-      alert(error.response?.data?.message || '삭제 중 오류가 발생했습니다.');
-    }
+    });
   };
 
   if (loading) return <div className="text-center py-20">로딩 중...</div>;
