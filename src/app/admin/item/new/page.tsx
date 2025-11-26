@@ -4,21 +4,23 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { ItemFormInputs } from '@/types/item';
 import ItemForm from '@/components/ItemForm';
+import { useModal } from "@/context/ModalContext";
 
 export default function ItemNewPage() {
   const router = useRouter();
+  const { showAlert } = useModal();
 
   const handleCreate = async (data: ItemFormInputs) => {
     try {
       const response = await api.post('/admin/item/new', data);
       if (response.data.success) {
-        alert('상품이 등록되었습니다.');
+        showAlert('상품이 등록되었습니다.');
         router.push('/admin/item/list');
       } else {
-        alert(response.data.message);
+        showAlert(response.data.message);
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || '오류가 발생했습니다.');
+      showAlert(err.response?.data?.message || '오류가 발생했습니다.');
     }
   };
 

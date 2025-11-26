@@ -4,8 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { Member } from '@/types/member';
+import { useModal } from "@/context/ModalContext";
 
 export default function MemberListPage() {
+  const { showAlert, showConfirm } = useModal();
+
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -26,7 +29,7 @@ export default function MemberListPage() {
       setPage(response.data.number);
     } catch (error) {
       console.error('Failed to fetch members:', error);
-      alert('회원 목록을 불러오는데 실패했습니다.');
+      showAlert('회원 목록을 불러오는데 실패했습니다.', "오류");
     } finally {
       setLoading(false);
     }
@@ -36,20 +39,20 @@ export default function MemberListPage() {
     fetchMembers(0);
   }, []);
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('정말로 이 회원을 탈퇴시키겠습니까? 복구할 수 없습니다.')) return;
-
-    try {
-      const response = await api.delete(`/admin/members/${id}`);
-      if (response.data.success) {
-        alert('회원이 탈퇴 처리되었습니다.');
-        fetchMembers(page);
-      } else {
-        alert(response.data.message);
+  const handleDelete = (id: number) => {
+    showConfirm('정말로 이 회원을 탈퇴시키겠습니까? 복구할 수 없습니다.', async () => {
+      try {
+        const response = await api.delete(`/admin/members/${id}`);
+        if (response.data.success) {
+          showAlert('회원이 탈퇴 처리되었습니다.');
+          fetchMembers(page);
+        } else {
+          showAlert(response.data.message);
+        }
+      } catch (error: any) {
+        showAlert(error.response?.data?.message || '삭제 중 오류가 발생했습니다.', "오류");
       }
-    } catch (error: any) {
-      alert(error.response?.data?.message || '삭제 중 오류가 발생했습니다.');
-    }
+    });
   };
 
   const openRoleModal = (member: Member) => {
@@ -74,13 +77,13 @@ export default function MemberListPage() {
       const response = await api.post('/admin/members/role/send-verification', payload);
       
       if (response.data.success) {
-        alert('관리자 이메일로 인증 코드가 발송되었습니다.');
+        showAlert('관리자 이메일로 인증 코드가 발송되었습니다.');
         setIsCodeSent(true);
       } else {
-        alert(response.data.message);
+        showAlert(response.data.message);
       }
     } catch (error: any) {
-      alert(error.response?.data?.message || '코드 발송 실패');
+      showAlert(error.response?.data?.message || '코드 발송 실패', "오류");
     }
   };
 
@@ -94,14 +97,14 @@ export default function MemberListPage() {
       });
 
       if (response.data.success) {
-        alert('권한이 변경되었습니다.');
+        showAlert('권한이 변경되었습니다.');
         setIsModalOpen(false);
         fetchMembers(page);
       } else {
-        alert(response.data.message);
+        showAlert(response.data.message);
       }
     } catch (error: any) {
-      alert(error.response?.data?.message || '권한 변경 실패');
+      showAlert(error.response?.data?.message || '권한 변경 실패', "오류");
     }
   };
 
@@ -131,6 +134,9 @@ export default function MemberListPage() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{member.id}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{member.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{member.email}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={member.address}>
+                  {member.address}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                     member.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
@@ -180,7 +186,7 @@ export default function MemberListPage() {
 
       {/* 권한 변경 모달 */}
       {isModalOpen && selectedMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
             <div className="px-6 py-4 border-b bg-gray-50">
               <h3 className="text-lg font-bold text-gray-900">권한 변경</h3>

@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import api from '@/lib/api';
+import { useModal } from "@/context/ModalContext";
 
 declare global {
   interface Window {
@@ -26,6 +27,7 @@ interface SignupFormInputs {
 
 export default function SignupPage() {
   const router = useRouter();
+  const { showAlert } = useModal();
   const { register, handleSubmit, watch, setValue, setError, clearErrors, formState: { errors } } = useForm<SignupFormInputs>();
 
   const [emailVerified, setEmailVerified] = useState(false);
@@ -136,7 +138,7 @@ export default function SignupPage() {
   /* 주소 찾기 핸들러 */
   const handleAddressSearch = () => {
     if (!window.daum?.Postcode) {
-      alert("주소 검색 서비스를 불러오지 못했습니다.");
+      showAlert("주소 검색 서비스를 불러오지 못했습니다.", "오류");
       return;
     }
     
@@ -204,12 +206,12 @@ export default function SignupPage() {
       if (response.data.success) {
         router.push('/signup-success');
       } else {
-        alert(response.data.message || '회원가입에 실패했습니다.');
+        showAlert(response.data.message || '회원가입에 실패했습니다.', "가입 실패");
       }
     } catch (error: any) {
       console.error("Signup Error:", error);
       const errorMessage = error.response?.data?.message || '서버 오류가 발생했습니다.';
-      alert(errorMessage);
+      showAlert(errorMessage, "오류");
     }
   };
 

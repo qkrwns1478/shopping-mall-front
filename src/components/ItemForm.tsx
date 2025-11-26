@@ -37,9 +37,14 @@ export default function ItemForm({ initialValues, onSubmit, title, submitLabel }
 
   useEffect(() => {
     api.get('/api/categories')
-      .then(res => setCategories(res.data))
+      .then(res => {
+        setCategories(res.data);
+        if (initialValues?.categoryId) {
+          setValue('categoryId', initialValues.categoryId);
+        }
+      })
       .catch(err => console.error('카테고리 로드 실패', err));
-  }, []);
+  }, [initialValues?.categoryId, setValue]);
 
   const handleAddOption = () => {
     if (optionInput.trim()) {

@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { Item } from '@/types/item';
+import { useModal } from "@/context/ModalContext";
 
 export default function ItemListPage() {
+  const { showAlert, showConfirm } = useModal();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -20,7 +22,7 @@ export default function ItemListPage() {
       setPage(response.data.number);
     } catch (error) {
       console.error('Failed to fetch items:', error);
-      alert('상품 목록을 불러오는데 실패했습니다.');
+      showAlert("상품 목록을 불러오는데 실패했습니다.");
     } finally {
       setLoading(false);
     }
@@ -31,19 +33,19 @@ export default function ItemListPage() {
   }, []);
 
   const handleDelete = async (id: number) => {
-    if (!confirm('정말로 삭제하시겠습니까?')) return;
-
-    try {
-      const response = await api.delete(`/admin/item/${id}`);
-      if (response.data.success) {
-        alert('삭제되었습니다.');
-        fetchItems(page);
-      } else {
-        alert(response.data.message);
+    showConfirm('정말로 삭제하시겠습니까?', async () => {
+      try {
+        const response = await api.delete(`/admin/item/${id}`);
+        if (response.data.success) {
+          showAlert('삭제되었습니다.', "성공");
+          fetchItems(page);
+        } else {
+          showAlert(response.data.message, "실패");
+        }
+      } catch (error: any) {
+        showAlert(error.response?.data?.message || '삭제 중 오류가 발생했습니다.', "오류");
       }
-    } catch (error: any) {
-      alert(error.response?.data?.message || '삭제 중 오류가 발생했습니다.');
-    }
+    });
   };
 
   if (loading) return <div className="text-center py-20">로딩 중...</div>;

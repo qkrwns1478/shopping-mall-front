@@ -5,10 +5,12 @@ import { useRouter, useParams } from 'next/navigation';
 import api from '@/lib/api';
 import { ItemFormInputs } from '@/types/item';
 import ItemForm from '@/components/ItemForm';
+import { useModal } from "@/context/ModalContext";
 
 export default function ItemEditPage() {
   const router = useRouter();
   const params = useParams();
+  const { showAlert } = useModal();
   const itemId = params.itemId;
 
   const [initialData, setInitialData] = useState<ItemFormInputs | null>(null);
@@ -27,7 +29,7 @@ export default function ItemEditPage() {
         });
       } catch (error) {
         console.error(error);
-        alert('상품 정보를 불러오는데 실패했습니다.');
+        showAlert('상품 정보를 불러오는데 실패했습니다.');
         router.push('/admin/item/list');
       } finally {
         setLoading(false);
@@ -41,13 +43,13 @@ export default function ItemEditPage() {
     try {
       const response = await api.post(`/admin/item/${itemId}`, data);
       if (response.data.success) {
-        alert('상품 정보가 수정되었습니다.');
+        showAlert('상품 정보가 수정되었습니다.');
         router.push('/admin/item/list');
       } else {
-        alert(response.data.message);
+        showAlert(response.data.message);
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || '오류가 발생했습니다.');
+      showAlert(err.response?.data?.message || '오류가 발생했습니다.');
     }
   };
 
