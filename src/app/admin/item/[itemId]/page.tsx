@@ -1,3 +1,4 @@
+// src/app/admin/item/[itemId]/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,9 +13,15 @@ export default function ItemEditPage() {
   const params = useParams();
   const itemId = params.itemId;
 
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<ItemFormInputs>();
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ItemFormInputs>();
   const [loading, setLoading] = useState(true);
   const [imgUrls, setImgUrls] = useState<string[]>([]);
+  
+  // 옵션 관리 상태
+  const [optionInput, setOptionInput] = useState('');
+  const [options, setOptions] = useState<string[]>([]);
+
+  const isDiscount = watch('isDiscount');
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -27,9 +34,17 @@ export default function ItemEditPage() {
         setValue('stockNumber', data.stockNumber);
         setValue('itemDetail', data.itemDetail);
         setValue('itemSellStatus', data.itemSellStatus);
+        setValue('category', data.category);
+        setValue('brand', data.brand);
+        setValue('origin', data.origin);
+        setValue('deliveryFee', data.deliveryFee);
+        setValue('isDiscount', data.isDiscount || false);
+        setValue('discountRate', data.discountRate);
         
-        if (data.imgUrlList) {
-          setImgUrls(data.imgUrlList);
+        if (data.imgUrlList) setImgUrls(data.imgUrlList);
+        if (data.options) {
+          setOptions(data.options);
+          setValue('options', data.options);
         }
         
         setLoading(false);
@@ -43,10 +58,26 @@ export default function ItemEditPage() {
     if (itemId) fetchItem();
   }, [itemId, setValue, router]);
 
+  const handleAddOption = () => {
+    if (optionInput.trim()) {
+      const newOptions = [...options, optionInput.trim()];
+      setOptions(newOptions);
+      setValue('options', newOptions);
+      setOptionInput('');
+    }
+  };
+
+  const handleRemoveOption = (index: number) => {
+    const newOptions = options.filter((_, i) => i !== index);
+    setOptions(newOptions);
+    setValue('options', newOptions);
+  };
+
   const onSubmit = async (data: ItemFormInputs) => {
     const payload = {
       ...data,
-      imgUrlList: imgUrls
+      imgUrlList: imgUrls,
+      options: options
     };
 
     try {
@@ -76,31 +107,114 @@ export default function ItemEditPage() {
           <div className="bg-white shadow-md rounded-lg border border-gray-200 p-6 sm:p-8">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               
-              {/* 판매 상태 */}
-              <div>
-                <label className={labelClass}>판매 상태</label>
-                <select className={inputClass} {...register('itemSellStatus')}>
-                  <option value="SELL">판매중</option>
-                  <option value="SOLD_OUT">품절</option>
-                </select>
+              {/* 기본 정보 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>판매 상태</label>
+                  <select className={inputClass} {...register('itemSellStatus')}>
+                    <option value="SELL">판매중</option>
+                    <option value="SOLD_OUT">품절</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>카테고리</label>
+                  <select className={inputClass} {...register('category', { required: '카테고리는 필수입니다.' })}>
+                    <option value="">선택하세요</option>
+                    <option value="TOP">상의</option>
+                    <option value="BOTTOM">하의</option>
+                    <option value="OUTER">아우터</option>
+                    <option value="ACCESSORY">액세서리</option>
+                  </select>
+                </div>
               </div>
 
-              {/* 상품명 */}
               <div>
                 <label className={labelClass}>상품명</label>
                 <input type="text" className={inputClass} {...register('itemNm', { required: true })} />
               </div>
 
-              {/* 가격 */}
-              <div>
-                <label className={labelClass}>가격</label>
-                <input type="number" className={inputClass} {...register('price', { required: true })} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>브랜드</label>
+                  <input type="text" className={inputClass} {...register('brand')} />
+                </div>
+                <div>
+                  <label className={labelClass}>원산지</label>
+                  <input type="text" className={inputClass} {...register('origin')} />
+                </div>
               </div>
 
-              {/* 재고 */}
+              {/* 가격 및 할인 정보 */}
+              <div className="p-4 bg-gray-50 rounded-lg space-y-4 border border-gray-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelClass}>가격</label>
+                    <input type="number" className={inputClass} {...register('price', { required: true })} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>재고 수량</label>
+                    <input type="number" className={inputClass} {...register('stockNumber', { required: true })} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                  <div>
+                    <label className={labelClass}>배송비</label>
+                    <input type="number" className={inputClass} {...register('deliveryFee', { required: true })} />
+                  </div>
+                  <div className="flex items-center h-10">
+                    <input 
+                      type="checkbox" 
+                      id="isDiscount" 
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      {...register('isDiscount')} 
+                    />
+                    <label htmlFor="isDiscount" className="ml-2 text-sm font-bold text-gray-700">할인 적용</label>
+                  </div>
+                </div>
+
+                {isDiscount && (
+                  <div>
+                    <label className={labelClass}>할인율 (%)</label>
+                    <input type="number" className={inputClass} {...register('discountRate')} />
+                  </div>
+                )}
+              </div>
+
+              {/* 옵션 */}
               <div>
-                <label className={labelClass}>재고 수량</label>
-                <input type="number" className={inputClass} {...register('stockNumber', { required: true })} />
+                <label className={labelClass}>상품 옵션</label>
+                <div className="flex gap-2 mb-2">
+                  <input 
+                    type="text" 
+                    className={inputClass} 
+                    value={optionInput}
+                    onChange={(e) => setOptionInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddOption())}
+                    placeholder="옵션 추가"
+                  />
+                  <button 
+                    type="button" 
+                    onClick={handleAddOption}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-medium whitespace-nowrap"
+                  >
+                    추가
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {options.map((opt, index) => (
+                    <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                      {opt}
+                      <button 
+                        type="button" 
+                        onClick={() => handleRemoveOption(index)}
+                        className="ml-2 text-blue-600 hover:text-blue-800 focus:outline-none"
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                </div>
               </div>
 
               {/* 상세 설명 */}
@@ -110,10 +224,7 @@ export default function ItemEditPage() {
               </div>
 
               {/* 이미지 업로드 */}
-              <ImageUploader 
-                urls={imgUrls} 
-                onChange={setImgUrls} 
-              />
+              <ImageUploader urls={imgUrls} onChange={setImgUrls} />
 
               {/* 버튼 */}
               <div className="flex justify-between pt-4">
@@ -126,7 +237,7 @@ export default function ItemEditPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 font-bold text-white bg-blue-600 rounded shadow hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition"
+                  className="px-6 py-2 font-bold text-white bg-blue-600 rounded shadow hover:bg-blue-700 transition"
                 >
                   수정하기
                 </button>
