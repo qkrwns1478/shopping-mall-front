@@ -10,7 +10,6 @@ export default function AdminPage() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* 상품 관리 */}
         <Link href="/admin/item/list" className="block group">
           <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-300 transition-all duration-200 h-full">
             <div className="flex items-center justify-between mb-4">
@@ -27,7 +26,22 @@ export default function AdminPage() {
           </div>
         </Link>
 
-        {/* 회원 관리 */}
+        <Link href="/admin/category" className="block group">
+          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all duration-200 h-full">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-blue-50 rounded-lg text-blue-600 group-hover:bg-blue-100 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-xl font-bold mb-2 text-gray-900 group-hover:text-blue-600 transition-colors">카테고리 관리</h3>
+            <p className="text-gray-500 text-sm">
+              쇼핑몰의 카테고리를 추가, 수정 및 삭제합니다.
+            </p>
+          </div>
+        </Link>
+
         <Link href="/admin/member/list" className="block group">
           <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-purple-300 transition-all duration-200 h-full">
             <div className="flex items-center justify-between mb-4">

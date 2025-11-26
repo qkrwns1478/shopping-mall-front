@@ -1,4 +1,3 @@
-// src/app/admin/item/[itemId]/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,28 +12,32 @@ export default function ItemEditPage() {
   const params = useParams();
   const itemId = params.itemId;
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ItemFormInputs>();
+  const { register, handleSubmit, setValue, watch } = useForm<ItemFormInputs>();
   const [loading, setLoading] = useState(true);
   const [imgUrls, setImgUrls] = useState<string[]>([]);
-  
-  // 옵션 관리 상태
   const [optionInput, setOptionInput] = useState('');
   const [options, setOptions] = useState<string[]>([]);
-
+  const [categories, setCategories] = useState<{id: number, name: string}[]>([]);
+  
   const isDiscount = watch('isDiscount');
 
   useEffect(() => {
-    const fetchItem = async () => {
+    const fetchData = async () => {
       try {
-        const response = await api.get(`/admin/item/${itemId}`);
-        const data = response.data.data;
-        
+        const [itemRes, catRes] = await Promise.all([
+          api.get(`/admin/item/${itemId}`),
+          api.get('/api/categories')
+        ]);
+
+        setCategories(catRes.data);
+
+        const data = itemRes.data.data;
         setValue('itemNm', data.itemNm);
         setValue('price', data.price);
         setValue('stockNumber', data.stockNumber);
         setValue('itemDetail', data.itemDetail);
         setValue('itemSellStatus', data.itemSellStatus);
-        setValue('category', data.category);
+        setValue('categoryId', data.categoryId);
         setValue('brand', data.brand);
         setValue('origin', data.origin);
         setValue('deliveryFee', data.deliveryFee);
@@ -46,16 +49,15 @@ export default function ItemEditPage() {
           setOptions(data.options);
           setValue('options', data.options);
         }
-        
         setLoading(false);
       } catch (error) {
         console.error(error);
-        alert('상품 정보를 불러오는데 실패했습니다.');
+        alert('데이터 로드 실패');
         router.push('/admin/item/list');
       }
     };
 
-    if (itemId) fetchItem();
+    if (itemId) fetchData();
   }, [itemId, setValue, router]);
 
   const handleAddOption = () => {
@@ -83,7 +85,7 @@ export default function ItemEditPage() {
     try {
       const response = await api.post(`/admin/item/${itemId}`, payload);
       if (response.data.success) {
-        alert('상품 정보가 수정되었습니다.');
+        alert('수정되었습니다.');
         router.push('/admin/item/list');
       } else {
         alert(response.data.message);
@@ -103,11 +105,8 @@ export default function ItemEditPage() {
       <div className="flex justify-center">
         <div className="w-full max-w-2xl">
           <h2 className="mb-8 text-3xl font-bold text-gray-900">상품 수정</h2>
-
           <div className="bg-white shadow-md rounded-lg border border-gray-200 p-6 sm:p-8">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              
-              {/* 기본 정보 */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>판매 상태</label>
@@ -118,12 +117,11 @@ export default function ItemEditPage() {
                 </div>
                 <div>
                   <label className={labelClass}>카테고리</label>
-                  <select className={inputClass} {...register('category', { required: '카테고리는 필수입니다.' })}>
+                  <select className={inputClass} {...register('categoryId', { required: true })}>
                     <option value="">선택하세요</option>
-                    <option value="TOP">상의</option>
-                    <option value="BOTTOM">하의</option>
-                    <option value="OUTER">아우터</option>
-                    <option value="ACCESSORY">액세서리</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -144,7 +142,6 @@ export default function ItemEditPage() {
                 </div>
               </div>
 
-              {/* 가격 및 할인 정보 */}
               <div className="p-4 bg-gray-50 rounded-lg space-y-4 border border-gray-200">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -156,23 +153,16 @@ export default function ItemEditPage() {
                     <input type="number" className={inputClass} {...register('stockNumber', { required: true })} />
                   </div>
                 </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                   <div>
                     <label className={labelClass}>배송비</label>
-                    <input type="number" className={inputClass} {...register('deliveryFee', { required: true })} />
+                    <input type="number" className={inputClass} {...register('deliveryFee')} />
                   </div>
                   <div className="flex items-center h-10">
-                    <input 
-                      type="checkbox" 
-                      id="isDiscount" 
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      {...register('isDiscount')} 
-                    />
+                    <input type="checkbox" id="isDiscount" className="w-4 h-4" {...register('isDiscount')} />
                     <label htmlFor="isDiscount" className="ml-2 text-sm font-bold text-gray-700">할인 적용</label>
                   </div>
                 </div>
-
                 {isDiscount && (
                   <div>
                     <label className={labelClass}>할인율 (%)</label>
@@ -181,66 +171,32 @@ export default function ItemEditPage() {
                 )}
               </div>
 
-              {/* 옵션 */}
               <div>
                 <label className={labelClass}>상품 옵션</label>
                 <div className="flex gap-2 mb-2">
-                  <input 
-                    type="text" 
-                    className={inputClass} 
-                    value={optionInput}
-                    onChange={(e) => setOptionInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddOption())}
-                    placeholder="옵션 추가"
-                  />
-                  <button 
-                    type="button" 
-                    onClick={handleAddOption}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-medium whitespace-nowrap"
-                  >
-                    추가
-                  </button>
+                  <input type="text" className={inputClass} value={optionInput} onChange={(e) => setOptionInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddOption())} />
+                  <button type="button" onClick={handleAddOption} className="px-4 py-2 bg-gray-200 rounded">추가</button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {options.map((opt, index) => (
-                    <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
                       {opt}
-                      <button 
-                        type="button" 
-                        onClick={() => handleRemoveOption(index)}
-                        className="ml-2 text-blue-600 hover:text-blue-800 focus:outline-none"
-                      >
-                        &times;
-                      </button>
+                      <button type="button" onClick={() => handleRemoveOption(index)} className="ml-2 text-blue-600">&times;</button>
                     </span>
                   ))}
                 </div>
               </div>
 
-              {/* 상세 설명 */}
               <div>
                 <label className={labelClass}>상품 상세 설명</label>
                 <textarea className={`${inputClass} h-32 resize-none`} {...register('itemDetail', { required: true })} />
               </div>
 
-              {/* 이미지 업로드 */}
               <ImageUploader urls={imgUrls} onChange={setImgUrls} />
 
-              {/* 버튼 */}
               <div className="flex justify-between pt-4">
-                <button
-                  type="button"
-                  onClick={() => router.back()}
-                  className="px-4 py-2 font-medium text-gray-700 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 transition"
-                >
-                  취소
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 font-bold text-white bg-blue-600 rounded shadow hover:bg-blue-700 transition"
-                >
-                  수정하기
-                </button>
+                <button type="button" onClick={() => router.back()} className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded">취소</button>
+                <button type="submit" className="px-6 py-2 font-bold text-white bg-blue-600 rounded shadow hover:bg-blue-700">수정하기</button>
               </div>
             </form>
           </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -18,10 +18,18 @@ export default function ItemNewPage() {
       options: []
     }
   });
+
   const [imgUrls, setImgUrls] = useState<string[]>([]);
   const [optionInput, setOptionInput] = useState('');
   const [options, setOptions] = useState<string[]>([]);
+  const [categories, setCategories] = useState<{id: number, name: string}[]>([]);
   const isDiscount = watch('isDiscount');
+
+  useEffect(() => {
+    api.get('/api/categories')
+      .then(res => setCategories(res.data))
+      .catch(err => console.error('카테고리 로드 실패', err));
+  }, []);
 
   const handleAddOption = () => {
     if (optionInput.trim()) {
@@ -70,7 +78,6 @@ export default function ItemNewPage() {
           <div className="bg-white shadow-md rounded-lg border border-gray-200 p-6 sm:p-8">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               
-              {/* 기본 정보 섹션 */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>판매 상태</label>
@@ -81,51 +88,51 @@ export default function ItemNewPage() {
                 </div>
                 <div>
                   <label className={labelClass}>카테고리</label>
-                  <select className={inputClass} {...register('category', { required: '카테고리는 필수입니다.' })}>
+                  <select 
+                    className={inputClass} 
+                    {...register('categoryId', { required: '카테고리는 필수입니다.' })}
+                  >
                     <option value="">선택하세요</option>
-                    <option value="TOP">상의</option>
-                    <option value="BOTTOM">하의</option>
-                    <option value="OUTER">아우터</option>
-                    <option value="ACCESSORY">액세서리</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
                   </select>
-                  {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
+                  {errors.categoryId && <p className="text-red-500 text-xs mt-1">{errors.categoryId.message}</p>}
                 </div>
               </div>
 
               <div>
                 <label className={labelClass}>상품명</label>
-                <input type="text" className={inputClass} placeholder="상품명 입력" {...register('itemNm', { required: '상품명은 필수입니다.' })} />
-                {errors.itemNm && <p className="text-red-500 text-xs mt-1">{errors.itemNm.message}</p>}
+                <input type="text" className={inputClass} {...register('itemNm', { required: '상품명은 필수입니다.' })} />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>브랜드</label>
-                  <input type="text" className={inputClass} placeholder="브랜드명" {...register('brand')} />
+                  <input type="text" className={inputClass} {...register('brand')} />
                 </div>
                 <div>
                   <label className={labelClass}>원산지</label>
-                  <input type="text" className={inputClass} placeholder="제조국/원산지" {...register('origin')} />
+                  <input type="text" className={inputClass} {...register('origin')} />
                 </div>
               </div>
 
-              {/* 가격 및 재고 섹션 */}
               <div className="p-4 bg-gray-50 rounded-lg space-y-4 border border-gray-200">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelClass}>가격 (원)</label>
-                    <input type="number" className={inputClass} {...register('price', { required: true, min: 0 })} />
+                    <label className={labelClass}>가격</label>
+                    <input type="number" className={inputClass} {...register('price', { required: true })} />
                   </div>
                   <div>
                     <label className={labelClass}>재고 수량</label>
-                    <input type="number" className={inputClass} {...register('stockNumber', { required: true, min: 0 })} />
+                    <input type="number" className={inputClass} {...register('stockNumber', { required: true })} />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                   <div>
-                    <label className={labelClass}>배송비 (0원이면 무료)</label>
-                    <input type="number" className={inputClass} {...register('deliveryFee', { required: true, min: 0 })} />
+                    <label className={labelClass}>배송비</label>
+                    <input type="number" className={inputClass} {...register('deliveryFee', { required: true })} />
                   </div>
                   <div className="flex items-center h-10">
                     <input 
@@ -141,19 +148,13 @@ export default function ItemNewPage() {
                 {isDiscount && (
                   <div>
                     <label className={labelClass}>할인율 (%)</label>
-                    <input 
-                      type="number" 
-                      className={inputClass} 
-                      placeholder="예: 10" 
-                      {...register('discountRate', { min: 0, max: 100 })} 
-                    />
+                    <input type="number" className={inputClass} {...register('discountRate')} />
                   </div>
                 )}
               </div>
 
-              {/* 옵션 섹션 */}
               <div>
-                <label className={labelClass}>상품 옵션 (색상, 사이즈 등)</label>
+                <label className={labelClass}>상품 옵션</label>
                 <div className="flex gap-2 mb-2">
                   <input 
                     type="text" 
@@ -161,56 +162,30 @@ export default function ItemNewPage() {
                     value={optionInput}
                     onChange={(e) => setOptionInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddOption())}
-                    placeholder="옵션 입력 후 추가 버튼 또는 엔터"
+                    placeholder="옵션 입력 후 추가 버튼"
                   />
-                  <button 
-                    type="button" 
-                    onClick={handleAddOption}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-medium whitespace-nowrap"
-                  >
-                    추가
-                  </button>
+                  <button type="button" onClick={handleAddOption} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">추가</button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {options.map((opt, index) => (
-                    <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
                       {opt}
-                      <button 
-                        type="button" 
-                        onClick={() => handleRemoveOption(index)}
-                        className="ml-2 text-blue-600 hover:text-blue-800 focus:outline-none"
-                      >
-                        &times;
-                      </button>
+                      <button type="button" onClick={() => handleRemoveOption(index)} className="ml-2 text-blue-600">&times;</button>
                     </span>
                   ))}
                 </div>
               </div>
 
-              {/* 상세 설명 */}
               <div>
                 <label className={labelClass}>상품 상세 설명</label>
                 <textarea className={`${inputClass} h-32 resize-none`} {...register('itemDetail', { required: true })} />
               </div>
 
-              {/* 이미지 업로드 */}
               <ImageUploader urls={imgUrls} onChange={setImgUrls} />
 
-              {/* 버튼 영역 */}
               <div className="flex justify-between pt-4">
-                <button
-                  type="button"
-                  onClick={() => router.push('/admin/item/list')}
-                  className="px-4 py-2 font-medium text-gray-700 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50"
-                >
-                  취소
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 font-bold text-white bg-blue-600 rounded shadow hover:bg-blue-700"
-                >
-                  등록하기
-                </button>
+                <button type="button" onClick={() => router.push('/admin/item/list')} className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded">취소</button>
+                <button type="submit" className="px-6 py-2 font-bold text-white bg-blue-600 rounded hover:bg-blue-700">등록하기</button>
               </div>
             </form>
           </div>

@@ -10,7 +10,7 @@ export interface ItemFormInputs {
   itemDetail: string;
   itemSellStatus: ItemSellStatus;
   imgUrlList: string[];
-  category: string;
+  categoryId: number;
   options: string[];
   isDiscount: boolean;
   discountRate: number;
@@ -30,7 +30,10 @@ export interface Item {
   imgUrlList: string[];
   regTime: string;
   updateTime?: string;
-  category: string;
+  category: {
+    id: number;
+    name: string;
+  };
   rating: number;
   reviewCount: number;
   options: string[];
