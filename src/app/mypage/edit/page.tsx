@@ -283,7 +283,7 @@ export default function EditProfilePage() {
                 </div>
                 <button
                   type="submit"
-                  className="px-6 py-2 font-bold text-white bg-blue-600 rounded shadow hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition"
+                  className="px-6 py-2 font-bold text-white bg-primary rounded shadow hover:bg-primary-dark focus:ring-2 focus:ring-blue-500 transition"
                 >
                   저장하기
                 </button>

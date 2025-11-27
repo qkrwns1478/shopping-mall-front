@@ -192,7 +192,7 @@ export default function ItemForm({ initialValues, onSubmit, title, submitLabel }
 
         <div className="flex justify-between pt-4">
           <button type="button" onClick={() => router.back()} className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded">취소</button>
-          <button type="submit" className="px-6 py-2 font-bold text-white bg-blue-600 rounded shadow hover:bg-blue-700">{submitLabel}</button>
+          <button type="submit" className="px-6 py-2 font-bold text-white bg-primary rounded shadow hover:bg-primary-dark">{submitLabel}</button>
         </div>
       </form>
     </div>

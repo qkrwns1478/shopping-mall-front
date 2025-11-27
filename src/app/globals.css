@@ -1,20 +1,33 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --mun-navy: #263c5a;
+  --mun-navy-dark: #1a2b42;
+  --mun-brown: #a67c52;
+  --mun-brown-dark: #8d6945;
+  --mun-beige: #fdfbf7;
+  --mun-gold: #d4af37;
+  
+  --background: var(--mun-beige);
+  --foreground: #1f2937;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+  --font-mono: var(--font-geist-mono), Courier, monospace;
+
+  --color-primary: var(--mun-navy);
+  --color-primary-dark: var(--mun-navy-dark);
+  --color-secondary: var(--mun-brown);
+  --color-secondary-dark: var(--mun-brown-dark);
+  --color-accent: var(--mun-gold);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #1a2b42;
     --foreground: #ededed;
   }
 }
@@ -22,5 +35,5 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }

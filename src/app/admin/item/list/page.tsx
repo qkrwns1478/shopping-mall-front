@@ -56,7 +56,7 @@ export default function ItemListPage() {
         <h2 className="text-2xl font-bold text-gray-900">상품 관리</h2>
         <Link 
           href="/admin/item/new" 
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-bold"
+          className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition font-bold"
         >
           + 상품 등록
         </Link>
@@ -119,7 +119,7 @@ export default function ItemListPage() {
               onClick={() => fetchItems(i)}
               className={`px-3 py-1 rounded ${
                 page === i 
-                  ? 'bg-blue-600 text-white' 
+                  ? 'bg-primary text-white' 
                   : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
               }`}
             >

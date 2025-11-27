@@ -174,7 +174,7 @@ export default function MemberListPage() {
               onClick={() => fetchMembers(i)}
               className={`px-3 py-1 rounded ${
                 page === i 
-                  ? 'bg-blue-600 text-white' 
+                  ? 'bg-primary text-white' 
                   : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -238,7 +238,7 @@ export default function MemberListPage() {
               <button
                 onClick={handleSubmitRoleChange}
                 disabled={!isCodeSent || !verificationCode}
-                className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 disabled:bg-blue-300"
+                className="px-4 py-2 text-white bg-primary rounded hover:bg-primary-dark disabled:bg-blue-300"
               >
                 변경 확인
               </button>
