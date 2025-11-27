@@ -1,6 +1,9 @@
-// src/types/item.ts
-
 export type ItemSellStatus = 'SELL' | 'SOLD_OUT';
+
+export interface ItemOption {
+  optionName: string;
+  extraPrice: number;
+}
 
 /* 상품 등록/수정 폼 입력값 타입 */
 export interface ItemFormInputs {
@@ -11,7 +14,7 @@ export interface ItemFormInputs {
   itemSellStatus: ItemSellStatus;
   imgUrlList: string[];
   categoryId: number;
-  options: string[];
+  itemOptionList: ItemOption[];
   isDiscount: boolean;
   discountRate: number;
   brand: string;
@@ -36,7 +39,7 @@ export interface Item {
   };
   rating: number;
   reviewCount: number;
-  options: string[];
+  itemOptionList: ItemOption[];
   isDiscount: boolean;
   discountRate: number;
   viewCount: number;

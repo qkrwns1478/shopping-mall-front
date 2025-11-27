@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { ItemFormInputs } from '@/types/item';
+import { ItemFormInputs, ItemOption } from '@/types/item';
 import ImageUploader from '@/components/ImageUploader';
 
 interface ItemFormProps {
@@ -23,14 +23,17 @@ export default function ItemForm({ initialValues, onSubmit, title, submitLabel }
       isDiscount: false,
       discountRate: 0,
       deliveryFee: 0,
-      options: [],
+      itemOptionList: [],
       ...initialValues,
     }
   });
 
   const [imgUrls, setImgUrls] = useState<string[]>(initialValues?.imgUrlList || []);
-  const [options, setOptions] = useState<string[]>(initialValues?.options || []);
-  const [optionInput, setOptionInput] = useState('');
+  const [options, setOptions] = useState<ItemOption[]>(initialValues?.itemOptionList || []);
+
+  const [optionNameInput, setOptionNameInput] = useState('');
+  const [optionPriceInput, setOptionPriceInput] = useState<number>(0);
+
   const [categories, setCategories] = useState<{id: number, name: string}[]>([]);
 
   const isDiscount = watch('isDiscount');
@@ -47,25 +50,31 @@ export default function ItemForm({ initialValues, onSubmit, title, submitLabel }
   }, [initialValues?.categoryId, setValue]);
 
   const handleAddOption = () => {
-    if (optionInput.trim()) {
-      const newOptions = [...options, optionInput.trim()];
+    if (optionNameInput.trim()) {
+      const newOption: ItemOption = {
+        optionName: optionNameInput.trim(),
+        extraPrice: Number(optionPriceInput)
+      };
+      const newOptions = [...options, newOption];
       setOptions(newOptions);
-      setValue('options', newOptions);
-      setOptionInput('');
+      setValue('itemOptionList', newOptions);
+      
+      setOptionNameInput('');
+      setOptionPriceInput(0);
     }
   };
 
   const handleRemoveOption = (index: number) => {
     const newOptions = options.filter((_, i) => i !== index);
     setOptions(newOptions);
-    setValue('options', newOptions);
+    setValue('itemOptionList', newOptions);
   };
 
   const onFormSubmit = (data: ItemFormInputs) => {
     const finalData = {
       ...data,
       imgUrlList: imgUrls,
-      options: options
+      itemOptionList: options
     };
     onSubmit(finalData);
   };
@@ -155,31 +164,47 @@ export default function ItemForm({ initialValues, onSubmit, title, submitLabel }
           )}
         </div>
 
-        <div>
+        <div className="border border-gray-200 rounded p-4">
           <label className={labelClass}>상품 옵션</label>
-          <div className="flex gap-2 mb-2">
-            <input 
-              type="text" 
-              className={inputClass} 
-              value={optionInput}
-              onChange={(e) => setOptionInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddOption())}
-              placeholder="옵션 입력 후 추가 버튼"
-            />
-            <button type="button" onClick={handleAddOption} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="5" y="11" width="14" height="2" fill="currentColor"/>
-                <rect x="11" y="5" width="2" height="14" fill="currentColor"/>
-              </svg>
+          <div className="flex flex-col sm:flex-row gap-2 mb-2 items-end">
+            <div className="flex-1">
+                <label className="text-xs text-gray-500 mb-1 block">옵션명</label>
+                <input 
+                type="text" 
+                className={inputClass} 
+                value={optionNameInput}
+                onChange={(e) => setOptionNameInput(e.target.value)}
+                placeholder="예: L 사이즈"
+                />
+            </div>
+            <div className="w-full sm:w-32">
+                <label className="text-xs text-gray-500 mb-1 block">추가 금액</label>
+                <input 
+                type="number" 
+                className={inputClass} 
+                value={optionPriceInput}
+                onChange={(e) => setOptionPriceInput(Number(e.target.value))}
+                placeholder="0"
+                />
+            </div>
+            <button type="button" onClick={handleAddOption} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 h-[42px]">
+              추가
             </button>
           </div>
-          <div className="flex flex-wrap gap-2">
+          
+          <div className="space-y-2 mt-2">
             {options.map((opt, index) => (
-              <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
-                {opt}
-                <button type="button" onClick={() => handleRemoveOption(index)} className="ml-2 text-blue-600">&times;</button>
-              </span>
+              <div key={index} className="flex justify-between items-center bg-blue-50 px-3 py-2 rounded text-sm text-blue-800">
+                <span>
+                    <span className="font-bold mr-2">{opt.optionName}</span>
+                    {opt.extraPrice > 0 && <span className="text-blue-600">(+{opt.extraPrice.toLocaleString()}원)</span>}
+                </span>
+                <button type="button" onClick={() => handleRemoveOption(index)} className="text-red-500 hover:text-red-700 font-bold px-2">
+                    &times;
+                </button>
+              </div>
             ))}
+            {options.length === 0 && <p className="text-gray-400 text-sm">등록된 옵션이 없습니다.</p>}
           </div>
         </div>
 

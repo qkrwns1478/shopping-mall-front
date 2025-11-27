@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { ItemFormInputs } from '@/types/item';
+import { ItemFormInputs, ItemOption } from '@/types/item';
 import { useModal } from "@/context/ModalContext";
 
 export default function ItemDetailPage() {
@@ -16,7 +16,7 @@ export default function ItemDetailPage() {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
-  const [selectedOption, setSelectedOption] = useState('');
+  const [selectedOption, setSelectedOption] = useState<ItemOption | null>(null);
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -53,7 +53,7 @@ export default function ItemDetailPage() {
         showAlert('품절된 상품입니다.');
         return;
     }
-    if (item.options && item.options.length > 0 && !selectedOption) {
+    if (item.itemOptionList && item.itemOptionList.length > 0 && !selectedOption) {
         showAlert('옵션을 선택해주세요.');
         return;
     }
@@ -74,9 +74,12 @@ export default function ItemDetailPage() {
 
   if (!item) return null;
 
-  const finalPrice = item.isDiscount 
+  const basePrice = item.isDiscount 
     ? Math.floor(item.price * (1 - item.discountRate / 100)) 
     : item.price;
+
+  const optionExtraPrice = selectedOption ? selectedOption.extraPrice : 0;
+  const totalPrice = (basePrice + optionExtraPrice) * quantity;
 
   return (
     <div className="container mx-auto px-4 py-12 lg:py-16">
@@ -133,19 +136,19 @@ export default function ItemDetailPage() {
             </h1>
             
             <div className="flex items-end gap-3">
-                {item.isDiscount && (
-                    <span className="text-lg text-stone-400 line-through font-light">
-                        {item.price.toLocaleString()}원
-                    </span>
-                )}
-                <span className="text-2xl font-bold text-primary">
-                    {finalPrice.toLocaleString()}원
+              {item.isDiscount && (
+                <span className="text-lg text-stone-400 line-through font-light">
+                  {item.price.toLocaleString()}원
                 </span>
-                {item.isDiscount && (
-                    <span className="text-lg text-red-600 font-medium">
-                        {item.discountRate}% OFF
-                    </span>
-                )}
+              )}
+              <span className="text-2xl font-bold text-primary">
+                {basePrice.toLocaleString()}원
+              </span>
+              {item.isDiscount && (
+                <span className="text-lg text-red-600 font-medium">
+                  {item.discountRate}% OFF
+                </span>
+              )}
             </div>
           </div>
 
@@ -155,17 +158,22 @@ export default function ItemDetailPage() {
             </div>
 
             <div className="space-y-4 pt-4">
-                {item.options && item.options.length > 0 && (
+                {item.itemOptionList && item.itemOptionList.length > 0 && (
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">옵션 선택</label>
                         <select 
                             className="w-full border border-stone-300 rounded px-3 py-2.5 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition"
-                            value={selectedOption}
-                            onChange={(e) => setSelectedOption(e.target.value)}
+                            value={selectedOption ? JSON.stringify(selectedOption) : ""}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setSelectedOption(val ? JSON.parse(val) : null);
+                            }}
                         >
                             <option value="">옵션을 선택해주세요</option>
-                            {item.options.map((opt, idx) => (
-                                <option key={idx} value={opt}>{opt}</option>
+                            {item.itemOptionList.map((opt, idx) => (
+                                <option key={idx} value={JSON.stringify(opt)}>
+                                    {opt.optionName} {opt.extraPrice > 0 ? `(+${opt.extraPrice.toLocaleString()}원)` : ''}
+                                </option>
                             ))}
                         </select>
                     </div>
@@ -208,19 +216,33 @@ export default function ItemDetailPage() {
             </div>
           </div>
 
-          <div className="mt-8 flex gap-3 border-t border-stone-200 pt-6">
-            <button 
-                onClick={() => handleOrder('cart')}
-                className="flex-1 py-3.5 px-4 border border-stone-300 rounded font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-400 transition"
-            >
-                장바구니
-            </button>
-            <button 
-                onClick={() => handleOrder('buy')}
-                className="flex-1 py-3.5 px-4 bg-primary text-white rounded font-bold hover:bg-primary-dark transition shadow-md"
-            >
-                구매하기
-            </button>
+          <div className="mt-8 border-t border-stone-200 pt-6">
+            <div className="flex justify-between items-center mb-6">
+                <span className="text-base font-bold text-stone-700">총 상품 금액</span>
+                <div className="text-right">
+                    <span className="text-sm text-stone-500 mr-2">
+                        총 수량 {quantity}개
+                    </span>
+                    <span className="text-3xl font-bold text-secondary-dark">
+                        {totalPrice.toLocaleString()}
+                        <span className="text-lg font-normal ml-1">원</span>
+                    </span>
+                </div>
+            </div>
+            <div className="flex gap-3">
+                <button 
+                    onClick={() => handleOrder('cart')}
+                    className="flex-1 py-4 px-4 border border-stone-300 rounded font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-400 transition"
+                >
+                    장바구니
+                </button>
+                <button 
+                    onClick={() => handleOrder('buy')}
+                    className="flex-1 py-4 px-4 bg-primary text-white rounded font-bold hover:bg-primary-dark transition shadow-md"
+                >
+                    구매하기
+                </button>
+            </div>
           </div>
         </div>
       </div>
