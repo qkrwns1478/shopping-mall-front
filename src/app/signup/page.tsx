@@ -241,7 +241,7 @@ export default function SignupPage() {
                             type="email" 
                             id="email" 
                             className={`${inputClass} ${errors.email ? errorInputClass : ''}`}
-                            autoComplete="email"
+                            autoComplete="username"
                             readOnly={emailVerified || (showCodeInput && timerActive)}
                             placeholder="email@example.com"
                             {...register('email', { required: '이메일은 필수 입력 값입니다.' })} 
@@ -278,7 +278,7 @@ export default function SignupPage() {
                                 {...register('verificationCode')}
                             />
                             <button 
-                                className={`${buttonSecondaryClass} bg-secondary text-white border-secondary hover:bg-[#8d6945] hover:text-white`}
+                                className={`${buttonSecondaryClass} bg-secondary border-secondary hover:bg-[#8d6945]`}
                                 type="button" 
                                 id="btn-verify-code"
                                 onClick={handleVerifyCode}
@@ -371,7 +371,7 @@ export default function SignupPage() {
                         id="detailAddress" 
                         className={inputClass}
                         placeholder="상세 주소" 
-                        autoComplete="off"
+                        autoComplete="address-line2"
                         {...register('detailAddress')} 
                     />
                     {(errors.postcode || errors.mainAddress) && <p className="mt-1 text-xs text-red-500">주소를 입력해주세요.</p>}
@@ -384,7 +384,7 @@ export default function SignupPage() {
                         type="date" 
                         id="birthday" 
                         className={inputClass}
-                        autoComplete="off" 
+                        autoComplete="bday"
                         {...register('birthday')}
                     />
                 </div>
