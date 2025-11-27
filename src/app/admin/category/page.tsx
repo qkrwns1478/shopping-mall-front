@@ -71,7 +71,7 @@ export default function CategoryManagePage() {
           value={newCategoryName}
           onChange={(e) => setNewCategoryName(e.target.value)}
         />
-        <button onClick={handleAdd} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        <button onClick={handleAdd} className="primary text-white px-4 py-2 rounded hover:bg-primary-dark">
           추가
         </button>
       </div>

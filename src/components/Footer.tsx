@@ -1,12 +1,17 @@
 export default function Footer() {
   return (
-    <footer className="py-10 bg-gray-900">
-      <div className="container mx-auto px-4">
-        <p className="m-0 text-center text-white text-base">
-          Copyright &copy; MUNSIKSA 2025
+    <footer className="py-12 bg-primary text-white">
+      <div className="container mx-auto px-4 flex flex-col items-center justify-center">
+        <p className="m-0 text-center text-stone-300 text-sm font-light">
+          Copyright &copy; 2025 MUNSIKSA. All rights reserved.
         </p>
-        <p className="mt-2 text-center text-gray-400 text-xs">
-          MUNSIKSA는 쇼핑몰 사이트를 구현하는 프로젝트이며, <b>실제로 운영하는 서비스가 아닙니다</b>.
+        {/* <div className="mt-4 flex space-x-4">
+          <a href="#" className="text-stone-400 hover:text-white transition-colors text-xs">Terms of Service</a>
+          <span className="text-stone-600 text-xs">|</span>
+          <a href="#" className="text-stone-400 hover:text-white transition-colors text-xs">Privacy Policy</a>
+        </div> */}
+        <p className="mt-6 text-center text-stone-500 text-xs px-4">
+          MUNSIKSA는 포트폴리오 목적으로 제작된 쇼핑몰 사이트이며, <b>실제로 운영되는 서비스가 아닙니다</b>.
         </p>
       </div>
     </footer>

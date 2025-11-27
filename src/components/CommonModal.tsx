@@ -88,7 +88,7 @@ export default function CommonModal({
                 }}
                 className={`px-5 py-2.5 text-sm font-semibold text-white rounded-lg shadow-[0_2px_10px_-2px_rgba(0,0,0,0.1)] focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all duration-150 ease-in-out ${
                   type === 'alert' 
-                    ? 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 focus:ring-blue-500 shadow-blue-500/20' 
+                    ? 'bg-primary hover:bg-primary-dark active:bg-blue-800 focus:ring-blue-500 shadow-blue-500/20' 
                     : 'bg-red-600 hover:bg-red-700 active:bg-red-800 focus:ring-red-500 shadow-red-500/20'
                 }`}
               >

@@ -36,7 +36,7 @@ export default function SignupPage() {
   
   const [timeLeft, setTimeLeft] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
-  const [emailMsg, setEmailMsg] = useState({ text: '', type: '' }); // 'text-red-500' | 'text-green-600'
+  const [emailMsg, setEmailMsg] = useState({ text: '', type: '' });
   const [codeMsg, setCodeMsg] = useState({ text: '', type: '' });
 
   /* 타이머 로직 */
@@ -89,7 +89,7 @@ export default function SignupPage() {
         setShowCodeInput(true);
         setTimeLeft(300);
         setTimerActive(true);
-        setEmailMsg({ text: `인증번호가 발송되었습니다.`, type: 'text-green-600' });
+        setEmailMsg({ text: `인증번호가 발송되었습니다.`, type: 'text-secondary' }); // secondary color 사용
       } else {
         setEmailMsg({ text: data.message, type: 'text-red-500' });
         setIsSending(false);
@@ -215,29 +215,32 @@ export default function SignupPage() {
     }
   };
 
-  const inputClass = "w-full px-3 py-2 text-gray-700 border rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out";
-  const errorInputClass = "border-red-500 focus:ring-red-500 focus:border-red-500";
-  const buttonSecondaryClass = "px-4 py-2 font-medium text-gray-700 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out whitespace-nowrap";
+  const inputClass = "w-full px-4 py-3 text-stone-700 bg-stone-50 border border-stone-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition duration-200 ease-in-out placeholder-stone-400";
+  const errorInputClass = "border-red-500 focus:ring-red-200 focus:border-red-500";
+  const buttonSecondaryClass = "px-4 py-3 font-medium text-stone-700 bg-white border border-stone-300 rounded-md hover:bg-stone-50 hover:text-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-200 transition duration-200 ease-in-out whitespace-nowrap shadow-sm";
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="container mx-auto px-4 py-16">
       <Script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" strategy="lazyOnload" />
       
       <div className="flex justify-center">
         <div className="w-full max-w-lg">
-          <h2 className="mb-8 text-3xl font-bold text-center text-gray-900">회원가입</h2>
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold text-primary mb-2">회원가입</h2>
+            <p className="text-stone-500 text-sm">MUNSIKSA의 회원이 되어 다양한 혜택을 누리세요.</p>
+          </div>
 
-          <div className="bg-white shadow-md rounded-lg px-8 pt-6 pb-8 mb-4 border border-gray-200">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <div className="bg-white shadow-xl rounded-xl p-8 sm:p-10 border border-stone-100">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 
                 {/* 이메일 */}
                 <div>
-                    <label htmlFor="email" className="block mb-1 text-sm font-bold text-gray-700">이메일</label>
+                    <label htmlFor="email" className="block mb-1.5 text-sm font-semibold text-stone-700">이메일</label>
                     <div className="flex gap-2">
                         <input 
                             type="email" 
                             id="email" 
-                            className={`${inputClass} ${errors.email ? errorInputClass : 'border-gray-300'}`}
+                            className={`${inputClass} ${errors.email ? errorInputClass : ''}`}
                             autoComplete="email"
                             readOnly={emailVerified || (showCodeInput && timerActive)}
                             placeholder="email@example.com"
@@ -250,11 +253,10 @@ export default function SignupPage() {
                             onClick={handleSendVerificationEmail}
                             disabled={isSending || emailVerified}
                         >
-                            {isSending && !showCodeInput ? '전송 중...' : '인증번호 발송'}
+                            {isSending && !showCodeInput ? '전송 중...' : '인증 요청'}
                         </button>
                     </div>
 
-                    {/* 에러 메시지 및 상태 메시지 */}
                     {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
                     <p className={`mt-1 text-xs ${emailMsg.type}`}>
                         {emailMsg.text} 
@@ -264,24 +266,24 @@ export default function SignupPage() {
 
                 {/* 인증번호 */}
                 {showCodeInput && !emailVerified && (
-                    <div className="p-4 bg-gray-50 rounded-md border border-gray-100">
-                        <label htmlFor="verification-code" className="block mb-1 text-sm font-bold text-gray-700">인증번호</label>
+                    <div className="p-5 bg-stone-50 rounded-lg border border-stone-100">
+                        <label htmlFor="verification-code" className="block mb-1.5 text-sm font-semibold text-stone-700">인증번호</label>
                         <div className="flex gap-2">
                             <input 
                                 type="text" 
                                 id="verification-code" 
-                                className={`${inputClass} border-gray-300`}
+                                className={`${inputClass} bg-white border-stone-300`}
                                 placeholder="6자리 숫자"
                                 autoComplete="off"
                                 {...register('verificationCode')}
                             />
                             <button 
-                                className={buttonSecondaryClass}
+                                className={`${buttonSecondaryClass} bg-secondary text-white border-secondary hover:bg-[#8d6945] hover:text-white`}
                                 type="button" 
                                 id="btn-verify-code"
                                 onClick={handleVerifyCode}
                             >
-                                인증 확인
+                                확인
                             </button>
                         </div>
                         <p className={`mt-1 text-xs ${codeMsg.type}`}>{codeMsg.text}</p>
@@ -290,11 +292,11 @@ export default function SignupPage() {
 
                 {/* 이름 */}
                 <div>
-                    <label htmlFor="name" className="block mb-1 text-sm font-bold text-gray-700">이름</label>
+                    <label htmlFor="name" className="block mb-1.5 text-sm font-semibold text-stone-700">이름</label>
                     <input 
                         type="text" 
                         id="name" 
-                        className={`${inputClass} ${errors.name ? errorInputClass : 'border-gray-300'}`}
+                        className={`${inputClass} ${errors.name ? errorInputClass : ''}`}
                         autoComplete="name" 
                         {...register('name', { required: '이름은 필수 입력 값입니다.' })}
                     />
@@ -303,11 +305,11 @@ export default function SignupPage() {
 
                 {/* 비밀번호 */}
                 <div>
-                    <label htmlFor="password" className="block mb-1 text-sm font-bold text-gray-700">비밀번호</label>
+                    <label htmlFor="password" className="block mb-1.5 text-sm font-semibold text-stone-700">비밀번호</label>
                     <input 
                         type="password" 
                         id="password" 
-                        className={`${inputClass} ${errors.password ? errorInputClass : 'border-gray-300'}`}
+                        className={`${inputClass} ${errors.password ? errorInputClass : ''}`}
                         autoComplete="new-password" 
                         placeholder="8자 이상 입력해주세요"
                         {...register('password', { 
@@ -320,11 +322,11 @@ export default function SignupPage() {
 
                 {/* 비밀번호 확인 */}
                 <div>
-                    <label htmlFor="passwordConfirm" className="block mb-1 text-sm font-bold text-gray-700">비밀번호 확인</label>
+                    <label htmlFor="passwordConfirm" className="block mb-1.5 text-sm font-semibold text-stone-700">비밀번호 확인</label>
                     <input 
                         type="password" 
                         id="passwordConfirm" 
-                        className={`${inputClass} ${errors.passwordConfirm ? errorInputClass : 'border-gray-300'}`}
+                        className={`${inputClass} ${errors.passwordConfirm ? errorInputClass : ''}`}
                         autoComplete="new-password" 
                         {...register('passwordConfirm', { required: '비밀번호 확인은 필수 입력 값입니다.' })}
                     />
@@ -333,12 +335,12 @@ export default function SignupPage() {
 
                 {/* 주소 */}
                 <div>
-                    <label htmlFor="postcode" className="block mb-1 text-sm font-bold text-gray-700">주소</label>
+                    <label htmlFor="postcode" className="block mb-1.5 text-sm font-semibold text-stone-700">주소</label>
                     <div className="flex gap-2 mb-2">
                         <input 
                             type="text" 
                             id="postcode" 
-                            className={`${inputClass} border-gray-300 bg-gray-50`}
+                            className={`${inputClass} bg-stone-100 cursor-default`}
                             placeholder="우편번호" 
                             readOnly 
                             autoComplete="postal-code"
@@ -357,7 +359,7 @@ export default function SignupPage() {
                     <input 
                         type="text" 
                         id="mainAddress" 
-                        className={`${inputClass} border-gray-300 bg-gray-50 mb-2`}
+                        className={`${inputClass} bg-stone-100 mb-2 cursor-default`}
                         placeholder="기본 주소" 
                         readOnly 
                         autoComplete="address-line1"
@@ -367,7 +369,7 @@ export default function SignupPage() {
                     <input 
                         type="text" 
                         id="detailAddress" 
-                        className={`${inputClass} border-gray-300`}
+                        className={inputClass}
                         placeholder="상세 주소" 
                         autoComplete="off"
                         {...register('detailAddress')} 
@@ -377,20 +379,20 @@ export default function SignupPage() {
 
                 {/* 생년월일 */}
                 <div>
-                    <label htmlFor="birthday" className="block mb-1 text-sm font-bold text-gray-700">생년월일 (선택)</label>
+                    <label htmlFor="birthday" className="block mb-1.5 text-sm font-semibold text-stone-700">생년월일 (선택)</label>
                     <input 
                         type="date" 
                         id="birthday" 
-                        className={`${inputClass} border-gray-300`}
+                        className={inputClass}
                         autoComplete="off" 
                         {...register('birthday')}
                     />
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-4">
                     <button 
                         type="submit" 
-                        className="w-full px-4 py-3 font-bold text-white bg-blue-600 rounded-md shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-300"
+                        className="w-full px-4 py-3.5 font-bold text-white bg-primary rounded-md shadow-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition duration-200"
                     >
                         가입하기
                     </button>

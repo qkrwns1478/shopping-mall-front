@@ -102,7 +102,7 @@ export default function AdminMainItemPage() {
         <h2 className="text-2xl font-bold text-gray-900">메인 상품 관리</h2>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-bold"
+          className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition font-bold"
         >
           + 상품 추가
         </button>
@@ -141,7 +141,7 @@ export default function AdminMainItemPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.price.toLocaleString()}원</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:text-red-900">
-                      목록에서 제거
+                      삭제
                     </button>
                   </td>
                 </tr>
@@ -208,7 +208,7 @@ export default function AdminMainItemPage() {
                     onClick={() => fetchProducts(i)}
                     className={`px-3 py-1 rounded text-sm ${
                       productPage === i 
-                        ? 'bg-blue-600 text-white' 
+                        ? 'bg-primary text-white' 
                         : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
                     }`}
                   >

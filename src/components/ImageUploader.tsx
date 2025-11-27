@@ -49,7 +49,7 @@ function ImageCard({ url, index, onRemove, onSetRep, isDragging, isOverlay }: Im
       />
 
       {!isOverlay && index === 0 && (
-        <div className="absolute top-0 left-0 bg-blue-600 text-white text-xs px-2 py-1 font-bold z-10 rounded-br">
+        <div className="absolute top-0 left-0 bg-primary text-white text-xs px-2 py-1 font-bold z-10 rounded-br">
           대표
         </div>
       )}

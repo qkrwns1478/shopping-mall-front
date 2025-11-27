@@ -27,7 +27,7 @@ export default function SignupSuccessPage() {
             <div className="flex flex-col gap-3">
               <Link 
                 href="/login" 
-                className="w-full px-4 py-3 font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="w-full px-4 py-3 font-bold text-white bg-primary rounded-lg hover:bg-primary-dark transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 로그인 하러 가기
               </Link>
