@@ -5,11 +5,13 @@ import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { ItemFormInputs, ItemOption } from '@/types/item';
 import { useModal } from "@/context/ModalContext";
+import { useCart } from "@/context/CartContext";
 
 export default function ItemDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { showAlert } = useModal();
+  const { showAlert, showConfirm } = useModal();
+  const { addToCart } = useCart();
   const itemId = params.itemId;
 
   const [item, setItem] = useState<ItemFormInputs | null>(null);
@@ -46,8 +48,7 @@ export default function ItemDetailPage() {
     });
   };
 
-  // TODO: 실제 장바구니/구매 기능 구현해야 함
-  const handleOrder = (type: 'cart' | 'buy') => {
+  const handleOrder = async (type: 'cart' | 'buy') => {
     if (!item) return;
     if (item.itemSellStatus === 'SOLD_OUT') {
         showAlert('품절된 상품입니다.');
@@ -58,10 +59,31 @@ export default function ItemDetailPage() {
         return;
     }
     
-    const message = type === 'cart' 
-        ? '장바구니 기능은 준비 중입니다.' 
-        : '구매 기능은 준비 중입니다.';
-    showAlert(message);
+    if (type === 'cart') {
+        const optionName = selectedOption ? selectedOption.optionName : '';
+        const optionPrice = selectedOption ? selectedOption.extraPrice : 0;
+        
+        const cartItemData = {
+            itemId: Number(itemId),
+            itemNm: item.itemNm,
+            price: item.price,
+            count: quantity,
+            imgUrl: item.imgUrlList && item.imgUrlList.length > 0 ? item.imgUrlList[0] : '',
+            optionName: optionName,
+            optionPrice: optionPrice,
+            isDiscount: item.isDiscount,
+            discountRate: item.discountRate,
+            deliveryFee: item.deliveryFee
+        };
+
+        await addToCart(cartItemData);
+        
+        showConfirm('장바구니에 상품을 담았습니다.\n장바구니로 이동하시겠습니까?', () => {
+            router.push('/cart');
+        });
+    } else {
+        showAlert('구매 기능은 준비 중입니다.');
+    }
   };
 
   if (loading) {
