@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { BsCartFill, BsList } from 'react-icons/bs';
 import api from '@/lib/api';
+import { useCart } from "@/context/CartContext";
 
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -12,6 +13,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const dropdownRef = useRef<HTMLLIElement>(null);
+  const { cartCount } = useCart();
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -112,9 +114,13 @@ export default function Header() {
 
             <ul className="flex items-center space-x-6">
               <li>
-                <Link href="#!" className="flex items-center text-stone-600 hover:text-primary transition relative">
+                <Link href="/cart" className="flex items-center text-stone-600 hover:text-primary transition relative">
                   <BsCartFill className="text-lg" />
-                  <span className="absolute -top-2 -right-2 bg-secondary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+                  {cartCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-secondary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                      {cartCount}
+                    </span>
+                  )}
                 </Link>
               </li>
               <div className="h-4 w-px bg-stone-300"></div>

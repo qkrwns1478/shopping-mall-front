@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import api from '@/lib/api';
+import { useCart } from "@/context/CartContext";
 
 interface LoginFormInputs {
   email: string;
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormInputs>();
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { mergeLocalCartToDb } = useCart();
 
   const onSubmit = async (data: LoginFormInputs) => {
     setLoginError(null);
@@ -32,6 +34,7 @@ export default function LoginPage() {
       });
 
       if (response.data.success) {
+        await mergeLocalCartToDb();
         window.location.href = '/';
       } else {
         setLoginError(response.data.message || '로그인에 실패했습니다.');
