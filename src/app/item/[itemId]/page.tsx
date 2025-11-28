@@ -70,7 +70,9 @@ export default function ItemDetailPage() {
             count: quantity,
             imgUrl: item.imgUrlList && item.imgUrlList.length > 0 ? item.imgUrlList[0] : '',
             optionName: optionName,
-            optionPrice: optionPrice
+            optionPrice: optionPrice,
+            isDiscount: item.isDiscount,
+            discountRate: item.discountRate
         };
 
         await addToCart(cartItemData);

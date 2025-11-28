@@ -12,6 +12,8 @@ export interface CartItem {
   imgUrl: string;
   optionName: string;
   optionPrice: number;
+  isDiscount: boolean;
+  discountRate: number;
 }
 
 interface CartContextType {
