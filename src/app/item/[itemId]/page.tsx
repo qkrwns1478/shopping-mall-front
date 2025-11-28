@@ -72,7 +72,8 @@ export default function ItemDetailPage() {
             optionName: optionName,
             optionPrice: optionPrice,
             isDiscount: item.isDiscount,
-            discountRate: item.discountRate
+            discountRate: item.discountRate,
+            deliveryFee: item.deliveryFee
         };
 
         await addToCart(cartItemData);

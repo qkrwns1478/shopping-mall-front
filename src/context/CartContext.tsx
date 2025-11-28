@@ -14,6 +14,7 @@ export interface CartItem {
   optionPrice: number;
   isDiscount: boolean;
   discountRate: number;
+  deliveryFee: number;
 }
 
 interface CartContextType {

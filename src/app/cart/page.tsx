@@ -2,11 +2,9 @@
 
 import { useCart } from "@/context/CartContext";
 import Link from "next/link";
-import { useModal } from "@/context/ModalContext";
 
 export default function CartPage() {
   const { cartItems, updateCartItemCount, removeFromCart } = useCart();
-  const { showConfirm } = useModal();
 
   const handleQuantityChange = (id: number, current: number, delta: number) => {
     const newCount = current + delta;
@@ -15,17 +13,17 @@ export default function CartPage() {
   };
 
   const handleRemove = (id: number) => {
-    showConfirm("정말 삭제하시겠습니까?", () => {
-        removeFromCart(id);
-    });
+    removeFromCart(id);
   };
 
-  const totalAmount = cartItems.reduce((acc, item) => {
+  const productAmount = cartItems.reduce((acc, item) => {
     const itemPrice = item.isDiscount 
       ? Math.floor(item.price * (1 - item.discountRate / 100)) 
       : item.price;
     return acc + (itemPrice + item.optionPrice) * item.count;
   }, 0);
+  const totalDeliveryFee = cartItems.reduce((acc, item) => acc + item.deliveryFee, 0);
+  const totalAmount = productAmount + totalDeliveryFee;
 
   if (cartItems.length === 0) {
     return (
@@ -71,11 +69,14 @@ export default function CartPage() {
                     </h3>
                   </Link>
 
-                  {item.optionName && (
-                    <p className="text-sm text-gray-500 mt-1">
-                      옵션: {item.optionName} {item.optionPrice > 0 && `(+${item.optionPrice.toLocaleString()}원)`}
+                  <div className="text-sm text-gray-500 mt-1 space-y-0.5">
+                    {item.optionName && (
+                      <p>옵션: {item.optionName} {item.optionPrice > 0 && `(+${item.optionPrice.toLocaleString()}원)`}</p>
+                    )}
+                    <p className="text-stone-400">
+                      배송비: {item.deliveryFee === 0 ? '무료' : `${item.deliveryFee.toLocaleString()}원`}
                     </p>
-                  )}
+                  </div>
                   
                   <div className="mt-2">
                     {item.isDiscount ? (
@@ -127,15 +128,15 @@ export default function CartPage() {
         <div className="w-full lg:w-80 h-fit bg-gray-50 p-6 rounded-lg border border-gray-200 sticky top-24">
           <h3 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2">결제 예정 금액</h3>
           <div className="flex justify-between mb-2 text-gray-600">
-            <span>상품 금액</span>
-            <span>{totalAmount.toLocaleString()}원</span>
+            <span>총 상품 금액</span>
+            <span>{productAmount.toLocaleString()}원</span>
           </div>
           <div className="flex justify-between mb-4 text-gray-600">
-            <span>배송비</span>
-            <span>0원</span>
+            <span>총 배송비</span>
+            <span>{totalDeliveryFee === 0 ? '0원' : `+${totalDeliveryFee.toLocaleString()}원`}</span>
           </div>
           <div className="flex justify-between mb-6 pt-4 border-t border-gray-300">
-            <span className="font-bold text-lg">총 합계</span>
+            <span className="font-bold text-lg">결제 금액</span>
             <span className="font-bold text-xl text-primary">{totalAmount.toLocaleString()}원</span>
           </div>
           <button className="w-full py-3 bg-primary text-white rounded font-bold hover:bg-primary-dark transition shadow-md">
