@@ -82,6 +82,7 @@ export default function ItemDetailPage() {
             router.push('/cart');
         });
     } else {
+        // TODO: 주문 기능 구현해야 함
         showAlert('구매 기능은 준비 중입니다.');
     }
   };
@@ -169,6 +170,11 @@ export default function ItemDetailPage() {
               {item.isDiscount && (
                 <span className="text-lg text-red-600 font-medium">
                   {item.discountRate}% OFF
+                </span>
+              )}
+              {item.isPayback && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200 ml-1">
+                  10% 적립
                 </span>
               )}
             </div>

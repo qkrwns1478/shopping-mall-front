@@ -146,15 +146,6 @@ export default function ItemForm({ initialValues, onSubmit, title, submitLabel }
               <label className={labelClass}>배송비 (0원이면 무료)</label>
               <input type="number" className={inputClass} {...register('deliveryFee', { required: true })} />
             </div>
-            <div className="flex items-center h-10">
-              <input 
-                type="checkbox" 
-                id="isDiscount" 
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                {...register('isDiscount')} 
-              />
-              <label htmlFor="isDiscount" className="ml-2 text-sm font-bold text-gray-700">할인 적용</label>
-            </div>
           </div>
 
           <div className="flex gap-6">
