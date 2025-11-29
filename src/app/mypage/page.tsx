@@ -9,6 +9,7 @@ interface Member {
   name: string;
   email: string;
   address: string;
+  points: Number;
   birthday: string;
 }
 
@@ -99,6 +100,14 @@ function MyPageContent() {
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                   {member?.address}
                 </dd>
+              </div>
+
+              {/* 포인트 */}
+              <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 border-b border-gray-100">
+                  <dt className="text-sm font-medium text-gray-500">보유 포인트</dt>
+                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-bold text-primary">
+                      {member?.points?.toLocaleString() || 0} P
+                  </dd>
               </div>
 
               {/* 생년월일 */}

@@ -13,12 +13,24 @@ export default function MemberListPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [currentUserEmail, setCurrentUserEmail] = useState('');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [newRole, setNewRole] = useState<'USER' | 'ADMIN'>('USER');
   const [verificationCode, setVerificationCode] = useState('');
   const [isCodeSent, setIsCodeSent] = useState(false);
+
+  const [isPointModalOpen, setIsPointModalOpen] = useState(false);
+  const [pointAmount, setPointAmount] = useState('');
+
+  useEffect(() => {
+    api.get('/members/info').then(res => {
+      if(res.data.authenticated) {
+        setCurrentUserEmail(res.data.email);
+      }
+    }).catch(err => console.error(err));
+  }, []);
 
   const fetchMembers = async (pageNum: number) => {
     try {
@@ -39,10 +51,15 @@ export default function MemberListPage() {
     fetchMembers(0);
   }, []);
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (member: Member) => {
+    if (member.role === 'ADMIN') {
+        showAlert("관리자 계정은 강제 탈퇴가 불가능합니다. 권한 변경 후 시도해 주세요.", "불가");
+        return;
+    }
+
     showConfirm('정말로 이 회원을 탈퇴시키겠습니까? 복구할 수 없습니다.', async () => {
       try {
-        const response = await api.delete(`/admin/members/${id}`);
+        const response = await api.delete(`/admin/members/${member.id}`);
         if (response.data.success) {
           showAlert('회원이 탈퇴 처리되었습니다.');
           fetchMembers(page);
@@ -56,6 +73,11 @@ export default function MemberListPage() {
   };
 
   const openRoleModal = (member: Member) => {
+    if (member.email === currentUserEmail) {
+        showAlert("로그인한 계정의 권한 변경은 불가합니다. 다른 관리자 계정으로 로그인 후 시도해주세요.", "불가");
+        return;
+    }
+
     setSelectedMember(member);
     setNewRole(member.role);
     setVerificationCode('');
@@ -108,6 +130,38 @@ export default function MemberListPage() {
     }
   };
 
+  const openPointModal = (member: Member) => {
+    setSelectedMember(member);
+    setPointAmount('');
+    setIsPointModalOpen(true);
+  };
+
+  const handlePointSubmit = async () => {
+    if (!selectedMember) return;
+    const amount = parseInt(pointAmount);
+    
+    if (isNaN(amount) || amount === 0) {
+        showAlert("유효한 포인트 금액을 입력해주세요.");
+        return;
+    }
+
+    try {
+        const response = await api.post(`/admin/members/${selectedMember.id}/points`, {
+            point: amount
+        });
+
+        if (response.data.success) {
+            showAlert("포인트가 수정되었습니다.");
+            setIsPointModalOpen(false);
+            fetchMembers(page);
+        } else {
+            showAlert(response.data.message);
+        }
+    } catch (error: any) {
+        showAlert(error.response?.data?.message || '포인트 수정 실패', "오류");
+    }
+  };
+
   if (loading) return <div className="text-center py-20">로딩 중...</div>;
 
   return (
@@ -125,6 +179,7 @@ export default function MemberListPage() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">이메일</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">주소</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">권한</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">포인트</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">관리</th>
             </tr>
           </thead>
@@ -144,7 +199,16 @@ export default function MemberListPage() {
                     {member.role}
                   </span>
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">
+                    {member.points.toLocaleString()} P
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button 
+                    onClick={() => openPointModal(member)}
+                    className="text-green-600 hover:text-green-900 mr-4"
+                  >
+                    포인트 관리
+                  </button>
                   <button 
                     onClick={() => openRoleModal(member)}
                     className="text-blue-600 hover:text-blue-900 mr-4"
@@ -152,9 +216,9 @@ export default function MemberListPage() {
                     권한 변경
                   </button>
                   <button 
-                    onClick={() => handleDelete(member.id)} 
+                    onClick={() => handleDelete(member)} 
                     className="text-red-600 hover:text-red-900"
-                    disabled={member.role === 'ADMIN'}
+                    // disabled={member.role === 'ADMIN'}
                   >
                     강제 탈퇴
                   </button>
@@ -241,6 +305,50 @@ export default function MemberListPage() {
                 className="px-4 py-2 text-white bg-primary rounded hover:bg-primary-dark disabled:bg-blue-300"
               >
                 변경 확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 포인트 변경 모달 */}
+      {isPointModalOpen && selectedMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4 overflow-hidden">
+            <div className="px-6 py-4 border-b bg-gray-50">
+              <h3 className="text-lg font-bold text-gray-900">포인트 관리</h3>
+              <p className="text-sm text-gray-500 mt-1">{selectedMember.name} ({selectedMember.email})</p>
+            </div>
+            <div className="p-6">
+                <div className="mb-4 text-center">
+                    <p className="text-sm text-gray-500 mb-1">현재 보유 포인트</p>
+                    <p className="text-2xl font-bold text-primary">{selectedMember.points.toLocaleString()} P</p>
+                </div>
+                
+                <label className="block text-sm font-medium text-gray-700 mb-2">지급/회수 금액</label>
+                <input
+                    type="number"
+                    placeholder="예: 1000 (지급), -1000 (회수)"
+                    value={pointAmount}
+                    onChange={(e) => setPointAmount(e.target.value)}
+                    className="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                    * 양수 입력 시 포인트 지급, 음수 입력 시 포인트가 차감됩니다.
+                </p>
+            </div>
+            <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3">
+              <button
+                onClick={() => setIsPointModalOpen(false)}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handlePointSubmit}
+                className="px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700"
+              >
+                확인
               </button>
             </div>
           </div>

@@ -4,4 +4,5 @@ export interface Member {
   name: string;
   address: string;
   role: 'USER' | 'ADMIN';
+  points: number;
 }

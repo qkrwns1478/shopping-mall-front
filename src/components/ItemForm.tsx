@@ -24,6 +24,7 @@ export default function ItemForm({ initialValues, onSubmit, title, submitLabel }
       discountRate: 0,
       deliveryFee: 0,
       itemOptionList: [],
+      isPayback: false,
       ...initialValues,
     }
   });
@@ -145,6 +146,9 @@ export default function ItemForm({ initialValues, onSubmit, title, submitLabel }
               <label className={labelClass}>배송비 (0원이면 무료)</label>
               <input type="number" className={inputClass} {...register('deliveryFee', { required: true })} />
             </div>
+          </div>
+
+          <div className="flex gap-6">
             <div className="flex items-center h-10">
               <input 
                 type="checkbox" 
@@ -153,6 +157,15 @@ export default function ItemForm({ initialValues, onSubmit, title, submitLabel }
                 {...register('isDiscount')} 
               />
               <label htmlFor="isDiscount" className="ml-2 text-sm font-bold text-gray-700">할인 적용</label>
+            </div>
+            <div className="flex items-center h-10">
+              <input 
+                type="checkbox" 
+                id="isPayback" 
+                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                {...register('isPayback')} 
+              />
+              <label htmlFor="isPayback" className="ml-2 text-sm font-bold text-gray-700">페이백 이벤트 (10%)</label>
             </div>
           </div>
 

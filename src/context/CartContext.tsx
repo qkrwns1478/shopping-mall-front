@@ -24,6 +24,7 @@ interface CartContextType {
   addToCart: (item: CartItem) => Promise<void>;
   updateCartItemCount: (cartItemId: number, count: number) => Promise<void>;
   removeFromCart: (cartItemId: number) => Promise<void>;
+  removeSelectedCartItems: (cartItemIds: number[]) => Promise<void>;
   mergeLocalCartToDb: () => Promise<void>;
 }
 
@@ -121,6 +122,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const removeSelectedCartItems = async (cartItemIds: number[]) => {
+    if (cartItemIds.length === 0) return;
+
+    if (isLoggedIn) {
+      await api.post('/api/cart/delete', { cartItemIds });
+      await fetchCart();
+    } else {
+      const updatedCart = cartItems.filter(item => 
+        item.cartItemId !== undefined && !cartItemIds.includes(item.cartItemId)
+      );
+      setCartItems(updatedCart);
+      localStorage.setItem('guest_cart', JSON.stringify(updatedCart));
+    }
+  };
+
   const mergeLocalCartToDb = async () => {
     const localCart = localStorage.getItem('guest_cart');
     if (!localCart) return;
@@ -152,6 +168,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addToCart, 
       updateCartItemCount, 
       removeFromCart,
+      removeSelectedCartItems,
       mergeLocalCartToDb
     }}>
       {children}
