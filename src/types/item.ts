@@ -20,6 +20,7 @@ export interface ItemFormInputs {
   brand: string;
   deliveryFee: number;
   origin: string;
+  isPayback: boolean;
 }
 
 /* 상품 리스트 조회용 타입 */
@@ -48,4 +49,5 @@ export interface Item {
   deliveryFee: number;
   origin: string;
   isDeleted: boolean;
+  isPayback: boolean;
 }
