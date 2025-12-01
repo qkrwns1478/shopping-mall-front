@@ -31,7 +31,7 @@ function OrderContent() {
 
     const itemsParam = searchParams.get("items");
     if (!itemsParam) {
-      showAlert("잘못된 접근입니다.");
+      showAlert("주문할 상품 정보가 없습니다.");
       router.replace("/cart");
       return;
     }
@@ -40,28 +40,42 @@ function OrderContent() {
     const filteredItems = cartItems.filter((item) => item.cartItemId && selectedIds.includes(item.cartItemId));
 
     if (filteredItems.length === 0) {
-      showAlert("주문할 상품 정보가 없습니다.");
+      showAlert("장바구니 정보가 갱신되었습니다. 다시 주문해주세요.");
       router.replace("/cart");
       return;
     }
 
     setOrderItems(filteredItems);
 
-    api.get("/members/info").then((res) => {
-      if (!res.data.authenticated) {
-        showAlert("로그인이 필요합니다.");
+    api.get("/members/info")
+      .then((res) => {
+        if (!res.data.authenticated) {
+          showAlert("로그인이 필요한 서비스입니다.");
+          const returnUrl = encodeURIComponent(`/order?items=${itemsParam}`);
+          router.replace(`/login?redirect=${returnUrl}`);
+          return;
+        }
+
+        setUserInfo({
+          name: res.data.name,
+          email: res.data.email,
+          phone: "010-1234-5678",
+          address: res.data.address || "",
+        });
+        setMyPoints(res.data.points);
+
+        if (filteredItems.length > 0) {
+          setIsReady(true);
+        } else {
+          showAlert("주문할 상품 정보를 찾을 수 없습니다.");
+          router.replace("/cart");
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        showAlert("로그인 정보를 확인하는 중 오류가 발생했습니다.");
         router.replace("/login");
-        return;
-      }
-      setUserInfo({
-        name: res.data.name,
-        email: res.data.email,
-        phone: "010-1234-5678", // TODO: 전화번호 필드 추가해야 함
-        address: res.data.address || "",
       });
-      setMyPoints(res.data.points);
-      setIsReady(true);
-    });
   }, [isCartLoading, cartItems, searchParams, router, showAlert, isPaymentComplete]);
 
   const productPrice = orderItems.reduce((acc, item) => {

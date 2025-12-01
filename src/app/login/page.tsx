@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import api from '@/lib/api';
 import { useCart } from "@/context/CartContext";
+import { useSearchParams, useRouter } from 'next/navigation';
 
 interface LoginFormInputs {
   email: string;
@@ -13,6 +14,8 @@ interface LoginFormInputs {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormInputs>();
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,7 +38,12 @@ export default function LoginPage() {
 
       if (response.data.success) {
         await mergeLocalCartToDb();
-        window.location.href = '/';
+        const redirectUrl = searchParams.get('redirect');
+        if (redirectUrl) {
+            window.location.href = redirectUrl;
+        } else {
+            window.location.href = '/';
+        }
       } else {
         setLoginError(response.data.message || '로그인에 실패했습니다.');
       }

@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import api from '@/lib/api';
-import { ItemFormInputs, ItemOption } from '@/types/item';
-import { useModal } from '@/context/ModalContext';
-import { useCart } from '@/context/CartContext';
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import api from "@/lib/api";
+import { ItemFormInputs, ItemOption } from "@/types/item";
+import { useModal } from "@/context/ModalContext";
+import { useCart } from "@/context/CartContext";
 
 export default function ItemDetailPage() {
   const params = useParams();
@@ -59,6 +59,20 @@ export default function ItemDetailPage() {
       return;
     }
 
+    if (type === "buy") {
+      try {
+        const res = await api.get("/members/info");
+        if (!res.data.authenticated) {
+          // showAlert("로그인이 필요한 서비스입니다.");
+          router.push(`/login?redirect=/item/${itemId}`);
+          return;
+        }
+      } catch (error) {
+        showAlert("로그인 상태 확인 중 오류가 발생했습니다.");
+        return;
+      }
+    }
+
     const optionName = selectedOption ? selectedOption.optionName : "";
     const optionPrice = selectedOption ? selectedOption.extraPrice : 0;
 
@@ -84,10 +98,11 @@ export default function ItemDetailPage() {
     } else {
       try {
         const cartItemId = await addToCart(cartItemData);
+
         if (cartItemId) {
           router.push(`/order?items=${cartItemId}`);
         } else {
-          showAlert("구매 처리에 실패했습니다.");
+          showAlert("구매 페이지 이동 실패 (Cart ID 생성 오류)");
         }
       } catch (error) {
         console.error(error);

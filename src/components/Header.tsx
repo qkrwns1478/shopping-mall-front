@@ -137,11 +137,8 @@ export default function Header() {
               ) : (
                 <div className="flex items-center space-x-4 text-sm">
                   {userName && <li className="text-stone-700"><span className="text-secondary font-bold">{userName}</span>님</li>}
-                  {userRole === 'ADMIN' ? (
-                    <li><Link href="/admin" className="text-stone-500 hover:text-primary font-bold">관리자</Link></li>
-                  ) : (
-                    <li><Link href="/mypage" className="text-stone-500 hover:text-primary">마이페이지</Link></li>
-                  )}
+                  {userRole === 'ADMIN' && <li><Link href="/admin" className="text-stone-500 hover:text-primary font-bold">관리자</Link></li>}
+                  <li><Link href="/mypage" className="text-stone-500 hover:text-primary">마이페이지</Link></li>
                   <li>
                     <button onClick={handleLogout} className="text-stone-400 hover:text-stone-600 underline decoration-stone-300 underline-offset-4">
                       로그아웃
