@@ -23,10 +23,11 @@ function OrderContent() {
   const [usePoints, setUsePoints] = useState(0);
   const [myPoints, setMyPoints] = useState(0);
   const [isReady, setIsReady] = useState(false);
+  const [isPaymentComplete, setIsPaymentComplete] = useState(false);
   const [payMethod, setPayMethod] = useState<"CARD" | "EASY_PAY">("CARD");
 
   useEffect(() => {
-    if (isCartLoading) return;
+    if (isCartLoading || isPaymentComplete) return;
 
     const itemsParam = searchParams.get("items");
     if (!itemsParam) {
@@ -61,7 +62,7 @@ function OrderContent() {
       setMyPoints(res.data.points);
       setIsReady(true);
     });
-  }, [isCartLoading, cartItems, searchParams, router, showAlert]);
+  }, [isCartLoading, cartItems, searchParams, router, showAlert, isPaymentComplete]);
 
   const productPrice = orderItems.reduce((acc, item) => {
     const price = item.isDiscount ? Math.floor(item.price * (1 - item.discountRate / 100)) : item.price;
@@ -79,8 +80,6 @@ function OrderContent() {
   };
 
   const requestCardPayment = async (paymentId: string) => {
-    if (!window.PortOne) return;
-
     return await window.PortOne.requestPayment({
       storeId: process.env.NEXT_PUBLIC_STORE_ID,
       channelKey: process.env.NEXT_PUBLIC_CHANNEL_KEY,
@@ -103,8 +102,6 @@ function OrderContent() {
   };
 
   const requestKakaoPayment = async (paymentId: string) => {
-    if (!window.PortOne) return;
-
     return await window.PortOne.requestPayment({
       storeId: process.env.NEXT_PUBLIC_STORE_ID,
       channelKey: process.env.NEXT_PUBLIC_CHANNEL_KEY,
@@ -173,9 +170,9 @@ function OrderContent() {
       });
 
       if (verifyResponse.data.success) {
+        setIsPaymentComplete(true);
         await fetchCart();
-        showAlert("주문이 완료되었습니다.");
-        router.replace("/");
+        router.replace("/order/complete");
       } else {
         showAlert(`주문 처리 실패: ${verifyResponse.data.message}`);
       }
@@ -343,7 +340,7 @@ function OrderContent() {
               onClick={handlePayment}
               className="w-full py-4 bg-primary text-white rounded font-bold hover:bg-primary-dark transition text-lg shadow-md"
             >
-              결제하기
+              {payMethod === "EASY_PAY" ? "카카오페이로 결제하기" : "결제하기"}
             </button>
           </div>
         </div>

@@ -23,7 +23,7 @@ interface CartContextType {
   cartCount: number;
   isLoading: boolean;
   fetchCart: () => Promise<void>;
-  addToCart: (item: CartItem) => Promise<void>;
+  addToCart: (item: CartItem) => Promise<number | null>;
   updateCartItemCount: (cartItemId: number, count: number) => Promise<void>;
   removeFromCart: (cartItemId: number) => Promise<void>;
   removeSelectedCartItems: (cartItemIds: number[]) => Promise<void>;
@@ -77,7 +77,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     fetchCart();
   }, [isLoggedIn]);
 
-  const addToCart = async (newItem: CartItem) => {
+  const addToCart = async (newItem: CartItem): Promise<number | null> => {
     if (isLoggedIn) {
       const payload = {
         itemId: newItem.itemId,
@@ -85,23 +85,35 @@ export function CartProvider({ children }: { children: ReactNode }) {
         optionName: newItem.optionName,
         optionPrice: newItem.optionPrice,
       };
-      await api.post('/api/cart', payload);
-      await fetchCart();
-    } else {
+      
+      try {
+        const response = await api.post('/api/cart', payload);
+        await fetchCart();
+        return response.data.cartItemId; 
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
+    } else { // 비로그인 처리
       const currentCart = [...cartItems];
       const existingItemIndex = currentCart.findIndex(
         (item) => item.itemId === newItem.itemId && item.optionName === newItem.optionName
       );
 
+      let targetId: number;
       if (existingItemIndex > -1) {
         currentCart[existingItemIndex].count += newItem.count;
+        targetId = currentCart[existingItemIndex].cartItemId || Date.now();
+        if (!currentCart[existingItemIndex].cartItemId) currentCart[existingItemIndex].cartItemId = targetId;
       } else {
-        newItem.cartItemId = Date.now();
+        targetId = Date.now();
+        newItem.cartItemId = targetId;
         currentCart.push(newItem);
       }
       
       setCartItems(currentCart);
       localStorage.setItem('guest_cart', JSON.stringify(currentCart));
+      return targetId;
     }
   };
 
