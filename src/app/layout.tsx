@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 import { ModalProvider } from "@/context/ModalContext";
 import { CartProvider } from "@/context/CartContext";
 import "./globals.css";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   title: "MUNSIKSA",
@@ -19,6 +20,10 @@ export default function RootLayout({
     <html lang="ko">
       <head></head>
       <body className="flex flex-col min-h-screen">
+        <Script 
+          src="https://cdn.portone.io/v2/browser-sdk.js" 
+          strategy="beforeInteractive" 
+        />
         <ModalProvider>
           <CartProvider>
             <Header />

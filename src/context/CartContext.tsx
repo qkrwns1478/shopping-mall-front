@@ -15,11 +15,13 @@ export interface CartItem {
   isDiscount: boolean;
   discountRate: number;
   deliveryFee: number;
+  isPayback?: boolean;
 }
 
 interface CartContextType {
   cartItems: CartItem[];
   cartCount: number;
+  isLoading: boolean;
   fetchCart: () => Promise<void>;
   addToCart: (item: CartItem) => Promise<void>;
   updateCartItemCount: (cartItemId: number, count: number) => Promise<void>;
@@ -33,6 +35,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkLogin = async () => {
@@ -43,12 +46,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
       } catch {
         setIsLoggedIn(false);
+      } finally {
+        // 로그인이 안 되어 있어도 로컬 카트 로드를 위해 일단 진행
       }
     };
     checkLogin();
   }, []);
 
   const fetchCart = async () => {
+    setIsLoading(true);
     if (isLoggedIn) {
       try {
         const res = await api.get('/api/cart');
@@ -64,6 +70,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setCartItems([]);
       }
     }
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -164,6 +171,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     <CartContext.Provider value={{ 
       cartItems, 
       cartCount: cartItems.length, 
+      isLoading,
       fetchCart, 
       addToCart, 
       updateCartItemCount, 

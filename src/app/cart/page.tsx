@@ -4,8 +4,10 @@ import { useCart } from "@/context/CartContext";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useModal } from "@/context/ModalContext";
+import { useRouter } from "next/navigation";
 
 export default function CartPage() {
+  const router = useRouter();
   const { cartItems, updateCartItemCount, removeFromCart, removeSelectedCartItems } = useCart();
   const { showAlert, showConfirm } = useModal();
   
@@ -77,13 +79,13 @@ export default function CartPage() {
   const totalDeliveryFee = selectedCartItems.reduce((acc, item) => acc + item.deliveryFee, 0);
   const totalAmount = productAmount + totalDeliveryFee;
 
-  // TODO: 주문 및 결제 기능 구현해야 함
   const handleOrder = () => {
-    if (selectedCartItems.length === 0) {
+    if (selectedIds.size === 0) {
         showAlert("주문할 상품을 선택해주세요.");
         return;
     }
-    showAlert('구매 기능은 준비 중입니다.');
+    const selectedIdString = Array.from(selectedIds).join(',');
+    router.push(`/order?items=${selectedIdString}`);
   };
 
   if (cartItems.length === 0) {
