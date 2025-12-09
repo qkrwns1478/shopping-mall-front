@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { BsCartFill, BsList } from 'react-icons/bs';
+import { usePathname } from 'next/navigation';
 import api from '@/lib/api';
 import { useCart } from "@/context/CartContext";
 
@@ -14,6 +15,7 @@ export default function Header() {
   const [isShopOpen, setIsShopOpen] = useState(false);
   const dropdownRef = useRef<HTMLLIElement>(null);
   const { cartCount } = useCart();
+  const pathname = usePathname();
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -26,16 +28,18 @@ export default function Header() {
           setUserRole(response.data.role);
         } else {
           setIsLoggedIn(false);
+          setUserName('');
           setUserRole('');
         }
       } catch (error) {
         setIsLoggedIn(false);
+        setUserName('');
         setUserRole('');
       }
     };
 
     checkLoginStatus();
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
