@@ -12,4 +12,5 @@ export interface OrderHist {
   orderStatus: 'ORDER' | 'CANCEL';
   totalAmount: number;
   orderItemDtoList: OrderItem[];
+  memberEmail: string;
 }

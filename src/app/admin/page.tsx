@@ -21,7 +21,23 @@ export default function AdminPage() {
             </div>
             <h3 className="text-xl font-bold mb-2 text-gray-900 group-hover:text-green-600 transition-colors">상품 관리</h3>
             <p className="text-gray-500 text-sm">
-              상품 목록 조회, 등록, 수정, 삭제
+              상품 목록 조회/등록/수정/삭제
+            </p>
+          </div>
+        </Link>
+
+        <Link href="/admin/order/list" className="block group">
+          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-red-300 transition-all duration-200 h-full">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-red-50 rounded-lg text-red-600 group-hover:bg-red-100 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-xl font-bold mb-2 text-gray-900 group-hover:text-red-600 transition-colors">주문 관리</h3>
+            <p className="text-gray-500 text-sm">
+              주문 내역 조회
             </p>
           </div>
         </Link>
