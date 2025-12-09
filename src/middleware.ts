@@ -26,7 +26,6 @@ export async function middleware(request: NextRequest) {
         Cookie: cookieHeader,
       },
       cache: 'no-store',
-      // redirect: 'manual',
     });
 
     if (res.status !== 200) {
@@ -39,13 +38,23 @@ export async function middleware(request: NextRequest) {
     }
 
     const userInfo = await res.json();
-    const { role } = userInfo;
+    
+    if (!userInfo.authenticated) {
+        if (isProtectedPage || isAdminPage) {
+            const loginUrl = new URL('/login', request.url);
+            loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
+            return NextResponse.redirect(loginUrl);
+        }
+        return NextResponse.next();
+    }
 
     if (isAuthPage) {
       const url = new URL('/', request.url);
       url.searchParams.set('alert', 'invalid_access');
       return NextResponse.redirect(url);
     }
+
+    const { role } = userInfo;
 
     if (isAdminPage && role !== 'ADMIN') {
       const url = new URL('/', request.url);
@@ -57,7 +66,7 @@ export async function middleware(request: NextRequest) {
     console.error('middleware auth check error:', error);
     
     if (isProtectedPage || isAdminPage) {
-      return NextResponse.redirect(new URL('/', request.url)); 
+      return NextResponse.redirect(new URL('/login', request.url)); 
     }
     
     return NextResponse.next();

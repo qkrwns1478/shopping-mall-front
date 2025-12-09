@@ -15,13 +15,15 @@ export interface CartItem {
   isDiscount: boolean;
   discountRate: number;
   deliveryFee: number;
+  isPayback?: boolean;
 }
 
 interface CartContextType {
   cartItems: CartItem[];
   cartCount: number;
+  isLoading: boolean;
   fetchCart: () => Promise<void>;
-  addToCart: (item: CartItem) => Promise<void>;
+  addToCart: (item: CartItem) => Promise<number | null>;
   updateCartItemCount: (cartItemId: number, count: number) => Promise<void>;
   removeFromCart: (cartItemId: number) => Promise<void>;
   removeSelectedCartItems: (cartItemIds: number[]) => Promise<void>;
@@ -33,6 +35,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkLogin = async () => {
@@ -43,12 +46,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
       } catch {
         setIsLoggedIn(false);
+      } finally {
+        // 로그인이 안 되어 있어도 로컬 카트 로드를 위해 일단 진행
       }
     };
     checkLogin();
   }, []);
 
   const fetchCart = async () => {
+    setIsLoading(true);
     if (isLoggedIn) {
       try {
         const res = await api.get('/api/cart');
@@ -64,13 +70,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setCartItems([]);
       }
     }
+    setIsLoading(false);
   };
 
   useEffect(() => {
     fetchCart();
   }, [isLoggedIn]);
 
-  const addToCart = async (newItem: CartItem) => {
+  const addToCart = async (newItem: CartItem): Promise<number | null> => {
     if (isLoggedIn) {
       const payload = {
         itemId: newItem.itemId,
@@ -78,23 +85,35 @@ export function CartProvider({ children }: { children: ReactNode }) {
         optionName: newItem.optionName,
         optionPrice: newItem.optionPrice,
       };
-      await api.post('/api/cart', payload);
-      await fetchCart();
-    } else {
+      
+      try {
+        const response = await api.post('/api/cart', payload);
+        await fetchCart();
+        return response.data.cartItemId; 
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
+    } else { // 비로그인 처리
       const currentCart = [...cartItems];
       const existingItemIndex = currentCart.findIndex(
         (item) => item.itemId === newItem.itemId && item.optionName === newItem.optionName
       );
 
+      let targetId: number;
       if (existingItemIndex > -1) {
         currentCart[existingItemIndex].count += newItem.count;
+        targetId = currentCart[existingItemIndex].cartItemId || Date.now();
+        if (!currentCart[existingItemIndex].cartItemId) currentCart[existingItemIndex].cartItemId = targetId;
       } else {
-        newItem.cartItemId = Date.now();
+        targetId = Date.now();
+        newItem.cartItemId = targetId;
         currentCart.push(newItem);
       }
       
       setCartItems(currentCart);
       localStorage.setItem('guest_cart', JSON.stringify(currentCart));
+      return targetId;
     }
   };
 
@@ -164,6 +183,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     <CartContext.Provider value={{ 
       cartItems, 
       cartCount: cartItems.length, 
+      isLoading,
       fetchCart, 
       addToCart, 
       updateCartItemCount, 

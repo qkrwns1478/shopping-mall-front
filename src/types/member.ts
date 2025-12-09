@@ -6,3 +6,8 @@ export interface Member {
   role: 'USER' | 'ADMIN';
   points: number;
 }
+
+export interface LoginFormInputs {
+  email: string;
+  password: string;
+}
