@@ -400,7 +400,7 @@ function OrderContent() {
                 <span>배송비</span>
                 <span>+{deliveryFee.toLocaleString()}원</span>
               </div>
-              <div className="flex justify-between text-green-600 font-medium">
+              <div className="flex justify-between text-red-500 font-medium">
                 <span>쿠폰 할인</span>
                 <span>-{couponDiscount.toLocaleString()}원</span>
               </div>
