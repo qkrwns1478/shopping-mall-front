@@ -25,6 +25,8 @@ function OrderContent() {
   const [isReady, setIsReady] = useState(false);
   const [isPaymentComplete, setIsPaymentComplete] = useState(false);
   const [payMethod, setPayMethod] = useState<"CARD" | "EASY_PAY">("CARD");
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ id: number; amount: number; name: string } | null>(null);
 
   useEffect(() => {
     if (isCartLoading || isPaymentComplete) return;
@@ -84,12 +86,36 @@ function OrderContent() {
   }, 0);
 
   const deliveryFee = orderItems.reduce((acc, item) => acc + item.deliveryFee, 0);
-  const finalPrice = Math.max(0, productPrice + deliveryFee - usePoints);
+
+  const couponDiscount = appliedCoupon?.amount || 0;
+  const finalPrice = Math.max(0, productPrice + deliveryFee - couponDiscount - usePoints);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode) return;
+    try {
+      const res = await api.get(`/api/coupons/check?code=${couponCode}`);
+      if (res.data.valid) {
+        setAppliedCoupon(res.data);
+        showAlert(`'${res.data.name}' 쿠폰이 적용되었습니다.`);
+        
+        const newMaxPoints = productPrice + deliveryFee - res.data.amount;
+        if (usePoints > newMaxPoints) {
+          setUsePoints(Math.max(0, newMaxPoints));
+        }
+      }
+    } catch (e: any) {
+      setAppliedCoupon(null);
+      showAlert(e.response?.data?.message || "유효하지 않은 쿠폰입니다.");
+    }
+  };
 
   const handlePointChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = Number(e.target.value);
+    const maxUseable = productPrice + deliveryFee - couponDiscount;
+
     if (val > myPoints) val = myPoints;
-    if (val > productPrice + deliveryFee) val = productPrice + deliveryFee;
+    if (val > maxUseable) val = Math.max(0, maxUseable);
+
     setUsePoints(val);
   };
 
@@ -174,6 +200,7 @@ function OrderContent() {
         orderId: paymentId,
         amount: finalPrice,
         usedPoints: usePoints,
+        couponId: appliedCoupon?.id || null,
         orderItems: orderItems.map((item) => ({
           cartItemId: item.cartItemId,
           itemId: item.itemId,
@@ -278,11 +305,52 @@ function OrderContent() {
               </span>
             </div>
             <button
-              onClick={() => setUsePoints(Math.min(myPoints, productPrice + deliveryFee))}
+              onClick={() => {
+                const maxUseable = productPrice + deliveryFee - couponDiscount;
+                setUsePoints(Math.min(myPoints, Math.max(0, maxUseable)));
+              }}
               className="mt-2 text-xs text-blue-600 underline hover:text-blue-800"
             >
               전액 사용
             </button>
+          </section>
+
+          {/* 쿠폰 사용 섹션 */}
+          <section className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+            <h3 className="text-lg font-bold mb-4">쿠폰 할인</h3>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                placeholder="쿠폰 코드를 입력하세요"
+                className="flex-1 border p-2 rounded"
+                disabled={!!appliedCoupon}
+              />
+              {appliedCoupon ? (
+                <button
+                  onClick={() => {
+                    setAppliedCoupon(null);
+                    setCouponCode("");
+                  }}
+                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 font-bold whitespace-nowrap"
+                >
+                  적용 취소
+                </button>
+              ) : (
+                <button
+                  onClick={handleApplyCoupon}
+                  className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark font-bold whitespace-nowrap"
+                >
+                  쿠폰 적용
+                </button>
+              )}
+            </div>
+            {appliedCoupon && (
+              <p className="text-green-600 text-sm mt-2 font-medium">
+                ✓ {appliedCoupon.name} (-{appliedCoupon.amount.toLocaleString()}원) 적용됨
+              </p>
+            )}
           </section>
 
           {/* 결제 수단 선택 */}
@@ -340,6 +408,10 @@ function OrderContent() {
               <div className="flex justify-between">
                 <span>배송비</span>
                 <span>+{deliveryFee.toLocaleString()}원</span>
+              </div>
+              <div className="flex justify-between text-green-600">
+                <span>쿠폰 할인</span>
+                <span>-{couponDiscount.toLocaleString()}원</span>
               </div>
               <div className="flex justify-between text-red-500">
                 <span>포인트 사용</span>
