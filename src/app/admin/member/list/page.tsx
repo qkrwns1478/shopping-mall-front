@@ -6,6 +6,13 @@ import api from '@/lib/api';
 import { Member } from '@/types/member';
 import { useModal } from "@/context/ModalContext";
 
+interface SimpleCoupon {
+    id: number;
+    name: string;
+    discountAmount: number;
+    validUntil: string;
+}
+
 export default function MemberListPage() {
   const { showAlert, showConfirm } = useModal();
 
@@ -14,6 +21,10 @@ export default function MemberListPage() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [currentUserEmail, setCurrentUserEmail] = useState('');
+  const [selectedMemberIds, setSelectedMemberIds] = useState<number[]>([]);
+  const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
+  const [coupons, setCoupons] = useState<SimpleCoupon[]>([]);
+  const [selectedCouponId, setSelectedCouponId] = useState<number | ''>('');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -50,6 +61,65 @@ export default function MemberListPage() {
   useEffect(() => {
     fetchMembers(0);
   }, []);
+
+  const fetchCoupons = async () => {
+    try {
+        const res = await api.get('/admin/coupons');
+        setCoupons(res.data);
+    } catch (e) {
+        console.error(e);
+    }
+  };
+
+  const handleCheck = (id: number) => {
+    if (selectedMemberIds.includes(id)) {
+        setSelectedMemberIds(selectedMemberIds.filter(mid => mid !== id));
+    } else {
+        setSelectedMemberIds([...selectedMemberIds, id]);
+    }
+  };
+
+  const handleCheckAll = () => {
+    if (selectedMemberIds.length === members.length) {
+        setSelectedMemberIds([]);
+    } else {
+        setSelectedMemberIds(members.map(m => m.id));
+    }
+  };
+
+  const openCouponModal = () => {
+    if (selectedMemberIds.length === 0) {
+        showAlert("쿠폰을 지급할 회원을 선택해주세요.");
+        return;
+    }
+    fetchCoupons();
+    setSelectedCouponId('');
+    setIsCouponModalOpen(true);
+  };
+
+  const handleCouponSubmit = async () => {
+    if (!selectedCouponId) {
+        showAlert("지급할 쿠폰을 선택해주세요.");
+        return;
+    }
+
+    try {
+        const response = await api.post('/admin/coupons/bulk-issue', {
+            couponId: selectedCouponId,
+            memberIds: selectedMemberIds
+        });
+        
+        if (response.data.success) {
+            showAlert(response.data.message);
+            setIsCouponModalOpen(false);
+            setSelectedMemberIds([]);
+        } else {
+            showAlert(response.data.message);
+        }
+    } catch (error: any) {
+        showAlert(error.response?.data?.message || "지급 중 오류가 발생했습니다.");
+    }
+  };
 
   const handleDelete = (member: Member) => {
     if (member.role === 'ADMIN') {
@@ -168,12 +238,29 @@ export default function MemberListPage() {
     <div className="container mx-auto px-4 py-12">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">회원 관리</h2>
+        <button 
+          onClick={openCouponModal}
+          className="px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600 font-bold flex items-center gap-2 shadow-sm"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+          </svg>
+          쿠폰 일괄 지급 ({selectedMemberIds.length})
+        </button>
       </div>
 
       <div className="bg-white shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
+              <th className="px-6 py-3 text-left">
+                <input 
+                  type="checkbox" 
+                  checked={members.length > 0 && selectedMemberIds.length === members.length}
+                  onChange={handleCheckAll}
+                  className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                />
+              </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">이름</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">이메일</th>
@@ -186,6 +273,14 @@ export default function MemberListPage() {
           <tbody className="bg-white divide-y divide-gray-200">
             {members.map((member) => (
               <tr key={member.id}>
+                <td className="px-6 py-4">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedMemberIds.includes(member.id)}
+                    onChange={() => handleCheck(member.id)}
+                    className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                  />
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{member.id}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{member.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{member.email}</td>
@@ -245,6 +340,55 @@ export default function MemberListPage() {
               {i + 1}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* 쿠폰 지급 모달 */}
+      {isCouponModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="px-6 py-4 border-b bg-pink-50">
+              <h3 className="text-lg font-bold text-pink-900">쿠폰 일괄 지급</h3>
+              <p className="text-sm text-pink-600 mt-1">선택된 회원: {selectedMemberIds.length}명</p>
+            </div>
+            <div className="p-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">지급할 쿠폰 선택</label>
+                {coupons.length === 0 ? (
+                    <p className="text-gray-500 text-sm">등록된 쿠폰이 없습니다.</p>
+                ) : (
+                    <select
+                        value={selectedCouponId}
+                        onChange={(e) => setSelectedCouponId(Number(e.target.value) || '')}
+                        className="w-full border border-gray-300 rounded-md p-2 focus:ring-pink-500 focus:border-pink-500"
+                    >
+                        <option value="">쿠폰을 선택하세요</option>
+                        {coupons.map(c => (
+                            <option key={c.id} value={c.id}>
+                                {c.name} ({c.discountAmount.toLocaleString()}원 할인)
+                            </option>
+                        ))}
+                    </select>
+                )}
+                
+                <div className="mt-4 bg-gray-50 p-3 rounded text-xs text-gray-500">
+                    * 이미 해당 쿠폰을 보유 중인 회원은 자동으로 지급 대상에서 제외됩니다.
+                </div>
+            </div>
+            <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3">
+              <button
+                onClick={() => setIsCouponModalOpen(false)}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleCouponSubmit}
+                className="px-4 py-2 text-white bg-pink-500 rounded hover:bg-pink-600"
+              >
+                지급하기
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
