@@ -20,16 +20,22 @@ function MyPageContent() {
 
   const [member, setMember] = useState<Member | null>(null);
   const [orders, setOrders] = useState<OrderHist[]>([]);
+  const [couponCount, setCouponCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [memberRes, ordersRes] = await Promise.all([api.get("/members/mypage"), api.get("/api/orders")]);
+        const [memberRes, ordersRes, couponRes] = await Promise.all([
+          api.get("/members/mypage"),
+          api.get("/api/orders"),
+          api.get("/api/my-coupons?type=active"),
+        ]);
 
         setMember(memberRes.data);
         setOrders(ordersRes.data);
+        setCouponCount(couponRes.data.length);
       } catch (err: any) {
         console.error("Failed to fetch data:", err);
         setError("정보를 불러오는데 실패했습니다.");
@@ -64,12 +70,35 @@ function MyPageContent() {
         <section>
           <div className="flex justify-between items-end mb-6">
             <h2 className="text-3xl font-bold text-gray-900">마이페이지</h2>
-            <Link
-              href="/mypage/check-password"
-              className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
-            >
-              정보 수정
-            </Link>
+            <div className="flex gap-4 text-sm font-medium">
+              <Link
+                href="/mypage/coupon"
+                className="text-primary hover:text-primary-dark hover:underline flex items-center gap-1"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
+                  />
+                </svg>
+                내 쿠폰함
+              </Link>
+              <span className="text-gray-300">|</span>
+              <Link
+                href="/mypage/check-password"
+                className="text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                정보 수정
+              </Link>
+            </div>
           </div>
 
           {success && (
@@ -82,27 +111,34 @@ function MyPageContent() {
           )}
 
           <div className="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
+            <div className="grid grid-cols-2 text-center border-b border-gray-200 divide-x divide-gray-200 bg-gray-50">
+              <div className="p-4">
+                <p className="text-sm text-gray-500 mb-1">보유 포인트</p>
+                <p className="text-xl font-bold text-primary">
+                  {member?.points?.toLocaleString() || 0} P
+                </p>
+              </div>
+              <Link href="/mypage/coupon" className="p-4 hover:bg-gray-100 transition block">
+                <p className="text-sm text-gray-500 mb-1">사용 가능 쿠폰</p>
+                <p className="text-xl font-bold text-gray-900">{couponCount} 장</p>
+              </Link>
+            </div>
+
             <div className="border-t border-gray-200">
               <dl>
                 <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 border-b border-gray-100">
-                  <dt className="text-sm font-medium text-gray-500">보유 포인트</dt>
-                  <dd className="mt-1 text-sm sm:mt-0 sm:col-span-2 font-bold text-primary">
-                    {member?.points?.toLocaleString() || 0} P
-                  </dd>
-                </div>
-                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 border-b border-gray-100">
                   <dt className="text-sm font-medium text-gray-500">이름</dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-semibold">
                     {member?.name}
                   </dd>
                 </div>
-                <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 border-b border-gray-100">
+                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 border-b border-gray-100">
                   <dt className="text-sm font-medium text-gray-500">이메일</dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                     {member?.email}
                   </dd>
                 </div>
-                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 border-b border-gray-100">
+                <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 border-b border-gray-100">
                   <dt className="text-sm font-medium text-gray-500">주소</dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                     {member?.address}

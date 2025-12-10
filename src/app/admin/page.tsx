@@ -26,6 +26,22 @@ export default function AdminPage() {
           </div>
         </Link>
 
+        <Link href="/admin/coupon" className="block group">
+          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-pink-300 transition-all duration-200 h-full">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-pink-50 rounded-lg text-pink-600 group-hover:bg-pink-100 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-xl font-bold mb-2 text-gray-900 group-hover:text-pink-600 transition-colors">쿠폰 관리</h3>
+            <p className="text-gray-500 text-sm">
+              할인 쿠폰 생성 및 발급 내역 관리
+            </p>
+          </div>
+        </Link>
+
         <Link href="/admin/order/list" className="block group">
           <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-red-300 transition-all duration-200 h-full">
             <div className="flex items-center justify-between mb-4">

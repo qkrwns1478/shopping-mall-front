@@ -12,6 +12,13 @@ declare global {
   }
 }
 
+interface MyCoupon {
+  memberCouponId: number;
+  name: string;
+  amount: number;
+  validUntil: string;
+}
+
 function OrderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -25,6 +32,8 @@ function OrderContent() {
   const [isReady, setIsReady] = useState(false);
   const [isPaymentComplete, setIsPaymentComplete] = useState(false);
   const [payMethod, setPayMethod] = useState<"CARD" | "EASY_PAY">("CARD");
+  const [myCoupons, setMyCoupons] = useState<MyCoupon[]>([]);
+  const [selectedCouponId, setSelectedCouponId] = useState<number | "">(""); 
 
   useEffect(() => {
     if (isCartLoading || isPaymentComplete) return;
@@ -63,13 +72,7 @@ function OrderContent() {
           address: res.data.address || "",
         });
         setMyPoints(res.data.points);
-
-        if (filteredItems.length > 0) {
-          setIsReady(true);
-        } else {
-          showAlert("주문할 상품 정보를 찾을 수 없습니다.");
-          router.replace("/cart");
-        }
+        setIsReady(true);
       })
       .catch((err) => {
         console.error(err);
@@ -78,18 +81,34 @@ function OrderContent() {
       });
   }, [isCartLoading, cartItems, searchParams, router, showAlert, isPaymentComplete]);
 
+  useEffect(() => {
+    if (isReady) {
+      api.get("/api/my-coupons")
+        .then((res) => setMyCoupons(res.data))
+        .catch((err) => console.error("쿠폰 목록 로드 실패:", err));
+    }
+  }, [isReady]);
+
   const productPrice = orderItems.reduce((acc, item) => {
     const price = item.isDiscount ? Math.floor(item.price * (1 - item.discountRate / 100)) : item.price;
     return acc + (price + item.optionPrice) * item.count;
   }, 0);
 
   const deliveryFee = orderItems.reduce((acc, item) => acc + item.deliveryFee, 0);
-  const finalPrice = Math.max(0, productPrice + deliveryFee - usePoints);
+
+  const selectedCoupon = myCoupons.find((c) => c.memberCouponId === Number(selectedCouponId));
+  const couponDiscount = selectedCoupon ? selectedCoupon.amount : 0;
+
+  const finalPrice = Math.max(0, productPrice + deliveryFee - couponDiscount - usePoints);
 
   const handlePointChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = Number(e.target.value);
+    
+    const maxUseable = Math.max(0, productPrice + deliveryFee - couponDiscount);
+    
     if (val > myPoints) val = myPoints;
-    if (val > productPrice + deliveryFee) val = productPrice + deliveryFee;
+    if (val > maxUseable) val = maxUseable;
+
     setUsePoints(val);
   };
 
@@ -174,6 +193,7 @@ function OrderContent() {
         orderId: paymentId,
         amount: finalPrice,
         usedPoints: usePoints,
+        memberCouponId: selectedCouponId || null,
         orderItems: orderItems.map((item) => ({
           cartItemId: item.cartItemId,
           itemId: item.itemId,
@@ -264,6 +284,42 @@ function OrderContent() {
             </div>
           </section>
 
+          {/* 쿠폰 선택 섹션 */}
+          <section className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+            <h3 className="text-lg font-bold mb-4">쿠폰 할인</h3>
+            {myCoupons.length === 0 ? (
+              <p className="text-gray-500 text-sm">사용 가능한 쿠폰이 없습니다.</p>
+            ) : (
+              <div className="relative">
+                <select
+                  className="w-full border p-3 rounded bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
+                  value={selectedCouponId}
+                  onChange={(e) => {
+                    setSelectedCouponId(Number(e.target.value) || "");
+                    setUsePoints(0);
+                  }}
+                >
+                  <option value="">쿠폰을 선택해주세요 (보유: {myCoupons.length}장)</option>
+                  {myCoupons.map((coupon) => (
+                    <option key={coupon.memberCouponId} value={coupon.memberCouponId}>
+                      {coupon.name} - {coupon.amount.toLocaleString()}원 할인
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            )}
+            {selectedCoupon && (
+              <p className="text-green-600 text-sm mt-2 font-medium">
+                ✓ {selectedCoupon.amount.toLocaleString()}원 할인이 적용됩니다.
+              </p>
+            )}
+          </section>
+
           <section className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
             <h3 className="text-lg font-bold mb-4">포인트 사용</h3>
             <div className="flex gap-2 items-center">
@@ -278,7 +334,10 @@ function OrderContent() {
               </span>
             </div>
             <button
-              onClick={() => setUsePoints(Math.min(myPoints, productPrice + deliveryFee))}
+              onClick={() => {
+                const maxUseable = Math.max(0, productPrice + deliveryFee - couponDiscount);
+                setUsePoints(Math.min(myPoints, maxUseable));
+              }}
               className="mt-2 text-xs text-blue-600 underline hover:text-blue-800"
             >
               전액 사용
@@ -341,7 +400,11 @@ function OrderContent() {
                 <span>배송비</span>
                 <span>+{deliveryFee.toLocaleString()}원</span>
               </div>
-              <div className="flex justify-between text-red-500">
+              <div className="flex justify-between text-red-500 font-medium">
+                <span>쿠폰 할인</span>
+                <span>-{couponDiscount.toLocaleString()}원</span>
+              </div>
+              <div className="flex justify-between text-red-500 font-medium">
                 <span>포인트 사용</span>
                 <span>-{usePoints.toLocaleString()}원</span>
               </div>
